@@ -1,0 +1,3419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<!-- PWA shell, injected by publish.ps1 — do not edit index.html by hand -->
+<meta name="theme-color" content="#0B1E2D">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Tin Roads">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+<script>
+(function () {
+  if ("serviceWorker" in navigator) {
+    addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js")["catch"](function () {});
+    });
+  }
+  // Saves live in localStorage, which iOS will evict from an idle site.
+  // Asking for persistence makes that much less likely.
+  if (navigator.storage && navigator.storage.persist) {
+    navigator.storage.persisted().then(function (already) {
+      if (!already) { navigator.storage.persist(); }
+    })["catch"](function () {});
+  }
+})();
+</script>
+<title>Tin Roads — an empire of the Bronze Age sea</title>
+<style>
+:root{
+  --abyss:#0B1E2D; --shelf:#17384C; --deep:#081722;
+  --verdigris:#4FA88B; --tin:#9FB2BC; --rust:#8C3F22;
+  --ochre:#C9A227; --murex:#6B3F7A; --murex-lit:#9A6BAE;
+  --paper:#E4DED0; --dim:#93A3AD;
+  --line:rgba(159,178,188,.22); --soft:rgba(159,178,188,.10);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  background:var(--abyss); color:var(--paper);
+  font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  font-size:14.5px; line-height:1.48; -webkit-font-smoothing:antialiased; overflow:hidden;
+}
+.n{font-family:ui-sans-serif,system-ui,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+
+.shell{display:grid;grid-template-columns:288px 1fr 306px;height:100vh}
+.rail{background:linear-gradient(180deg,#0d2334,#0a1a26);overflow-y:auto;padding:14px 14px 30px}
+.rail.l{border-right:1px solid var(--soft)}
+.rail.r{border-left:1px solid var(--soft)}
+.stage{position:relative;min-width:0}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+
+h1{font-size:19px;margin:0 0 1px;font-weight:600;letter-spacing:-.01em}
+.sub{color:var(--dim);font-size:11.5px;margin:0 0 14px}
+h2{font-size:11.5px;color:var(--tin);margin:18px 0 7px;font-weight:600}
+h2:first-of-type{margin-top:0}
+h3{font-size:14px;margin:0 0 2px;font-weight:600}
+
+.clock{display:flex;align-items:baseline;gap:7px;margin-bottom:2px}
+.yr{font-size:29px;font-weight:600;line-height:1;letter-spacing:-.02em}
+.mo{font-size:11.5px;color:var(--dim)}
+.wind{font-size:11.5px;color:var(--dim);margin-bottom:12px}
+.wind.et{color:var(--ochre)}
+
+button{font:inherit;font-size:12.5px;color:var(--paper);cursor:pointer;
+  background:rgba(159,178,188,.07);border:1px solid var(--line);
+  padding:6px 10px;border-radius:2px;transition:background .12s}
+button:hover:not(:disabled){background:rgba(159,178,188,.15)}
+button:disabled{opacity:.34;cursor:not-allowed}
+button:focus-visible{outline:2px solid var(--verdigris);outline-offset:2px}
+button.p{background:var(--verdigris);border-color:var(--verdigris);color:#06261c;font-weight:600}
+button.p:hover:not(:disabled){background:#63bb9d}
+.row{display:flex;gap:6px;margin-bottom:8px}
+.row button{flex:1}
+
+.stock{display:grid;grid-template-columns:1fr auto;gap:1px 8px;font-size:12.5px}
+.stock .g{color:var(--dim)}
+.stock .v{text-align:right}
+.stock .v.lo{color:var(--rust)}
+
+.card{border:1px solid var(--soft);border-radius:3px;padding:9px 10px;margin-bottom:7px;
+  background:rgba(159,178,188,.035)}
+.card.sel{border-color:var(--verdigris);background:rgba(79,168,139,.10)}
+.card .meta{font-size:11.5px;color:var(--dim)}
+
+.bld{display:flex;gap:8px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--soft)}
+.bld:last-child{border-bottom:none}
+.bld .info{flex:1;min-width:0}
+.bld .nm{font-size:13px;font-weight:600}
+.bld .ds{font-size:11.5px;color:var(--dim);line-height:1.32}
+.bld .cost{font-size:11.5px;color:var(--ochre);margin-top:1px}
+.bld button{flex:none;padding:4px 8px;font-size:11.5px}
+.bld .have{flex:none;font-size:11.5px;color:var(--verdigris);padding-top:3px}
+
+.tabs{display:flex;gap:4px;margin-bottom:9px}
+.tabs button{flex:1;font-size:12px;padding:5px 4px}
+.tabs button.on{background:var(--murex);border-color:var(--murex-lit);color:#fff}
+
+.rt{border:1px solid var(--soft);border-radius:3px;padding:8px 9px;margin-bottom:6px;font-size:12.5px}
+.rt .hd{display:flex;justify-content:space-between;gap:6px;align-items:baseline}
+.rt .leg{color:var(--dim);font-size:11.5px}
+.rt .bar{height:4px;background:rgba(159,178,188,.14);border-radius:2px;margin-top:5px;overflow:hidden}
+.rt .bar i{display:block;height:100%;background:var(--murex-lit)}
+.rt button{padding:2px 7px;font-size:11px}
+
+select,input[type=number]{font:inherit;font-size:12.5px;background:#0d2434;color:var(--paper);
+  border:1px solid var(--line);border-radius:2px;padding:5px 6px;width:100%}
+label.f{display:block;font-size:11.5px;color:var(--dim);margin:6px 0 2px}
+
+.log{font-size:12px;max-height:190px;overflow-y:auto;border-top:1px solid var(--soft);padding-top:8px}
+.log p{margin:0 0 5px;color:var(--dim)}
+.log b{color:var(--paper)}
+.log .y{color:var(--tin);font-size:10.5px;font-family:ui-sans-serif,system-ui,sans-serif}
+
+.tip{position:absolute;pointer-events:none;opacity:0;transition:opacity .1s;z-index:9;
+  background:rgba(8,22,33,.97);border:1px solid var(--line);padding:8px 10px;border-radius:3px;
+  font-size:12.5px;max-width:230px;box-shadow:0 6px 22px rgba(0,0,0,.55)}
+.tip h4{margin:0 0 4px;font-size:13px}
+.tip .r{display:flex;justify-content:space-between;gap:12px;color:var(--dim)}
+.tip .r span:last-child{color:var(--paper)}
+
+.hint{font-size:11.5px;color:var(--dim);line-height:1.4}
+.ctl{display:flex;align-items:center;gap:7px;margin-top:5px}
+.ctl input[type=range]{flex:1;accent-color:var(--verdigris);height:16px}
+.ctl .pc{font-size:11.5px;color:var(--paper);min-width:34px;text-align:right;
+  font-family:ui-sans-serif,system-ui,sans-serif;font-variant-numeric:tabular-nums}
+.resv{display:grid;grid-template-columns:1fr 76px;gap:4px 8px;align-items:center;font-size:12.5px}
+.resv .g{color:var(--dim)}
+.resv input{padding:4px 6px;font-size:12.5px;text-align:right}
+.off{color:var(--rust)}
+.ev{border-left:2px solid var(--ochre);padding:6px 0 6px 9px;margin-bottom:7px}
+.ev.bad{border-left-color:var(--rust)}
+.ev .en{font-size:13px;font-weight:600}
+.ev .em{font-size:11.5px;color:var(--dim);line-height:1.35}
+.ev .bar{height:3px;background:rgba(159,178,188,.14);border-radius:2px;margin-top:5px;overflow:hidden}
+.ev .bar i{display:block;height:100%;background:var(--ochre)}
+.ev.bad .bar i{background:var(--rust)}
+.empty{font-size:12.5px;color:var(--dim);padding:6px 0}
+.warn{color:var(--rust)}
+/* ---- map controls ---- */
+.mapctl{position:absolute;right:9px;bottom:9px;display:flex;flex-direction:column;gap:5px;z-index:4}
+.mapctl button{width:34px;height:34px;padding:0;font-size:16px;line-height:1;
+  background:rgba(8,22,33,.85);border-color:var(--line)}
+
+/* ---- phones and small tablets ---- */
+.mtabs{display:none}
+@media(max-width:860px){
+  body{overflow:auto;font-size:15px}
+  .shell{display:flex;flex-direction:column;height:auto;min-height:100dvh}
+  .stage{order:1;height:46dvh;min-height:250px;flex:none;
+    position:sticky;top:0;z-index:3;background:var(--abyss);
+    border-bottom:1px solid var(--line)}
+  .mtabs{order:2;display:flex;position:sticky;top:46dvh;z-index:3;
+    background:#0c2231;border-bottom:1px solid var(--soft);padding:5px;gap:4px}
+  .mtabs button{flex:1;font-size:12.5px;padding:9px 3px}
+  .mtabs button.on{background:var(--murex);border-color:var(--murex-lit);color:#fff}
+  .rail{order:3;border:none!important;overflow:visible;max-height:none;padding:13px 13px 40px}
+  .rail.r .tabs{display:none}          /* the phone tab bar replaces these */
+  /* one section at a time */
+  body[data-m="empire"] .rail.r{display:none}
+  body:not([data-m="empire"]) .rail.l{display:none}
+  /* bigger touch targets */
+  button{padding:9px 12px;font-size:13px}
+  .bld button{padding:8px 11px}
+  .bld{padding:10px 0}
+  select,input[type=number]{padding:9px 8px;font-size:15px}
+  .card{padding:11px 12px}
+  .log{max-height:none}
+  .tip{display:none}                    /* tap the marker instead */
+}
+
+/* ---- menu overlay ---- */
+#menu{position:fixed;inset:0;z-index:60;display:none;overflow-y:auto;
+  background:rgba(5,14,21,.90);backdrop-filter:blur(3px)}
+#menu.on{display:block}
+.menubox{max-width:560px;margin:min(7vh,60px) auto;padding:0 18px 60px}
+.menubox h2{margin-top:24px}
+.mrow{display:flex;gap:8px;margin-bottom:8px}
+.mrow button{flex:1;padding:11px 12px}
+.slot{display:flex;gap:9px;align-items:center;border:1px solid var(--soft);
+  border-radius:3px;padding:10px 11px;margin-bottom:7px;background:rgba(159,178,188,.04)}
+.slot .si{flex:1;min-width:0}
+.slot .sn{font-size:13.5px;font-weight:600}
+.slot .sm{font-size:11.5px;color:var(--dim)}
+.slot button{padding:6px 10px;font-size:12px;flex:none}
+.opt{display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:9px 0;border-bottom:1px solid var(--soft)}
+.opt:last-child{border-bottom:none}
+.opt .ol{flex:1}
+.opt .on2{font-size:13px}
+.opt .od{font-size:11.5px;color:var(--dim);line-height:1.34}
+.opt .oc{flex:none;display:flex;align-items:center;gap:7px;min-width:140px;justify-content:flex-end}
+.opt input[type=range]{width:96px;accent-color:var(--verdigris)}
+.opt select{width:auto;min-width:110px}
+.sw2{width:44px;height:24px;border-radius:12px;border:1px solid var(--line);
+  background:rgba(159,178,188,.12);position:relative;cursor:pointer;flex:none}
+.sw2 i{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;
+  background:var(--dim);transition:left .14s,background .14s}
+.sw2.on{background:rgba(79,168,139,.3);border-color:var(--verdigris)}
+.sw2.on i{left:22px;background:var(--verdigris)}
+#menu textarea{width:100%;height:110px;background:#0d2434;color:var(--paper);
+  border:1px solid var(--line);border-radius:2px;padding:8px;font-size:11.5px;
+  font-family:ui-monospace,monospace;resize:vertical}
+.mani{max-height:230px;overflow-y:auto;border:1px solid var(--soft);border-radius:3px;
+  padding:6px 8px;margin-top:3px;background:rgba(159,178,188,.03)}
+.mi{display:flex;align-items:center;gap:8px;padding:3px 0}
+.mi label{flex:1;display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12.5px;min-width:0}
+.mi label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mi input[type=checkbox]{width:16px;height:16px;accent-color:var(--verdigris);flex:none}
+.mi input[type=number]{width:74px;padding:3px 5px;font-size:12px;text-align:right;flex:none}
+.mi .hold{font-size:11px;color:var(--dim);min-width:34px;text-align:right;flex:none;
+  font-family:ui-sans-serif,system-ui,sans-serif}
+.crow{display:flex;align-items:center;gap:8px;padding:8px 9px;border:1px solid var(--soft);
+  border-radius:3px;margin-bottom:5px;background:rgba(159,178,188,.035);cursor:pointer}
+.crow:hover{background:rgba(159,178,188,.08)}
+.crow.open{border-color:var(--murex-lit);background:rgba(107,63,122,.12)}
+.crow .cn{flex:1;min-width:0}
+.crow .cn b{font-size:13px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crow .cn i{font-style:normal;font-size:11.5px;color:var(--dim);display:block;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crow .cw{flex:none;width:44px}
+.crow .cw .bar{height:4px;background:rgba(159,178,188,.15);border-radius:2px;overflow:hidden}
+.crow .cw .bar i{display:block;height:100%}
+.crow .cx{flex:none;color:var(--dim);font-size:14px;width:14px;text-align:center}
+.xp{border:1px solid var(--murex-lit);border-top:none;border-radius:0 0 3px 3px;
+  padding:10px 11px;margin:-6px 0 8px;background:rgba(107,63,122,.07)}
+.xp .nmrow{display:flex;gap:7px;align-items:center;margin-bottom:9px}
+.xp .nmrow input{flex:1;padding:6px 8px;font-size:13px}
+.note{font-size:11.5px;color:var(--dim);line-height:1.45;margin:6px 0 0}
+
+/* ---- opening screen ---- */
+#intro{position:fixed;inset:0;z-index:50;overflow-y:auto;
+  background:radial-gradient(120% 90% at 50% 0%,#123449 0%,#0B1E2D 55%,#06131c 100%)}
+.introwrap{max-width:1000px;margin:0 auto;padding:min(9vh,80px) 22px 60px}
+.introwrap .ttl{font-size:clamp(38px,7vw,68px);line-height:.98;letter-spacing:-.025em;margin:0;font-weight:600}
+.introwrap .lede{color:var(--dim);max-width:56ch;margin:14px 0 6px;font-size:clamp(14px,1.6vw,16.5px)}
+.introwrap .era{color:var(--tin);font-size:12.5px;margin-bottom:30px}
+.pick{font-size:12.5px;color:var(--tin);margin:0 0 12px}
+.starts{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px}
+.start{border:1px solid var(--line);border-radius:3px;padding:15px 15px 13px;cursor:pointer;
+  background:rgba(159,178,188,.045);transition:border-color .14s,background .14s;text-align:left;
+  display:flex;flex-direction:column;gap:7px}
+.start:hover,.start:focus-visible{border-color:var(--verdigris);background:rgba(79,168,139,.10);outline:none}
+.start h3{font-size:18px;margin:0}
+.start .tag{font-size:11.5px;color:var(--ochre)}
+.start p{margin:0;font-size:12.5px;color:var(--dim);line-height:1.42;flex:1}
+.start .dep{font-size:11.5px;color:var(--tin);border-top:1px solid var(--soft);padding-top:7px}
+.introfoot{margin-top:26px;color:var(--dim);font-size:12px;max-width:60ch;line-height:1.5}
+@media(max-width:860px){ .introwrap{padding:34px 16px 50px} }
+
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="intro">
+  <div class="introwrap">
+    <h1 class="ttl">Tin Roads</h1>
+    <p class="lede">Bronze needs copper and tin. Copper is scattered across the sea;
+      tin comes from two roads that end far beyond it. Build a house that can reach both —
+      or one that no longer needs to.</p>
+    <p class="era">The inland sea · from Year 0, for as long as you last<br><span id="ver2" style="opacity:.6"></span></p>
+    <p class="pick">Choose where your house begins</p>
+    <div class="starts" id="starts"></div>
+    <p class="introfoot">Each start sets a different problem. There is no victory —
+      you stop when you have built enough.</p>
+  </div>
+</div>
+
+<div id="menu">
+  <div class="menubox">
+    <h1 style="margin:0 0 2px">Menu</h1>
+    <p class="note" id="ver3" style="margin:0 0 4px"></p>
+    <p class="sub" id="menuState">—</p>
+    <div class="mrow">
+      <button class="p" id="mResume">Resume</button>
+      <button id="mNew">New game</button>
+    </div>
+
+    <h2>Saved games</h2>
+    <div id="slots"></div>
+
+    <h2>Options</h2>
+    <div id="opts"></div>
+
+    <h2>Move a save between devices</h2>
+    <p class="note">Browser storage isn't always available, so this always works.
+      Copy the text out to keep a save; paste one in and load it.</p>
+    <div class="mrow" style="margin-top:8px">
+      <button id="mExport">Copy save out</button>
+      <button id="mImport">Load pasted save</button>
+    </div>
+    <textarea id="saveText" placeholder="A save code appears here, or paste one in"></textarea>
+  </div>
+</div>
+
+<div class="shell">
+
+  <aside class="rail l">
+    <h1>Tin Roads</h1>
+    <p class="sub">An empire of the Bronze Age sea · <span id="ver"></span></p>
+
+    <div class="clock"><span class="yr n" id="yr">0</span><span class="mo">Year · <span id="mo">Jan · wk 1</span></span></div>
+    <div class="wind" id="wind">Seas open</div>
+
+    <div class="row">
+      <button class="p" id="play">Run</button>
+      <button id="step">+1 yr</button>
+      <button id="openMenu" title="Menu" style="flex:0 0 46px">☰</button>
+    </div>
+
+    <h2>Treasury</h2>
+    <div class="stock" id="treasury"></div>
+
+    <h2>Tidings</h2>
+    <div id="events"></div>
+
+    <h2>Cities</h2>
+    <div id="cities"></div>
+
+    <h2>Fleet</h2>
+    <div class="stock" id="fleet"></div>
+  </aside>
+
+  <main class="stage" id="stage">
+    <canvas id="map"></canvas>
+    <div class="tip" id="tip"></div>
+    <div class="mapctl">
+      <button id="zin" aria-label="Zoom in">+</button>
+      <button id="zout" aria-label="Zoom out">−</button>
+      <button id="zfit" aria-label="Fit the whole sea">⤢</button>
+    </div>
+  </main>
+
+  <nav class="mtabs" id="mtabs">
+    <button data-m="empire">Empire</button>
+    <button data-m="build" class="on">Build</button>
+    <button data-m="trade">Ships</button>
+    <button data-m="learn">Learn</button>
+    <button data-m="market">Market</button>
+    <button data-m="annals">Annals</button>
+  </nav>
+
+  <aside class="rail r">
+    <div class="tabs">
+      <button id="tabBuild" class="on">Build</button>
+      <button id="tabTrade">Shipping</button>
+      <button id="tabLearn">Learning</button>
+      <button id="tabMarket">Market</button>
+      <button id="tabAnnals">Annals</button>
+    </div>
+    <div id="panel"></div>
+    <h2>Chronicle</h2>
+    <div class="log" id="log"><p>Choose where your house begins.</p></div>
+  </aside>
+</div>
+
+<script>
+"use strict";
+
+/* =====================================================================
+   TIN ROADS — Bronze Age empire sandbox
+   You run a polity: found colonies, build out their industry, and move
+   goods by sea. The rest of the map trades on its own. No win condition.
+   ===================================================================== */
+
+/* major.minor.patch — minor for new systems, patch for fixes and balance */
+const VERSION="0.14.1";
+const BUILD="2026-09-11";
+
+const GOODS = ["grain","timber","charcoal","copperore","ironore","clay","wool","olives",
+               "copper","tin","iron","bronze","pottery","cloth","purple","oil","silver"];
+const GOOD_NAME = {grain:"Grain",timber:"Timber",charcoal:"Charcoal",copperore:"Copper ore",
+  ironore:"Iron ore",clay:"Clay",wool:"Wool",olives:"Olives",copper:"Copper",tin:"Tin",
+  iron:"Iron",bronze:"Bronze",pottery:"Pottery",cloth:"Cloth",purple:"Purple cloth",
+  oil:"Oil",silver:"Silver"};
+const BASE_PRICE = {grain:1, timber:2.2, charcoal:3.4, copperore:2.2, ironore:1.4, clay:0.8,
+  wool:2.6, olives:1.6, copper:6.5, tin:26, iron:3.4, bronze:16, pottery:4.5, cloth:7,
+  purple:34, oil:5, silver:1};
+/* what a ship will carry — raw and finished alike, but not coin */
+const TRADEABLE = GOODS.filter(g=>g!=="silver");
+/* shown in the compact stock readouts */
+const KEY_GOODS = ["grain","timber","charcoal","copper","tin","iron","bronze"];
+
+/* --- sites: real coordinates; deposits decide what can be built --- */
+const SITES = [
+  // start options
+  {id:"tyre",name:"Tyre",lat:33.271,lon:35.196,land:"levant",start:true,
+   dep:{fertile:1,forest:1,murex:2},
+   begin:["farm","dwellings","harbour","granary","timberyard"]},
+  {id:"ugarit",name:"Ugarit",lat:35.602,lon:35.782,land:"levant",start:true,
+   dep:{fertile:3,forest:1,clay:2},
+   begin:["farm","farm","dwellings","harbour","granary","timberyard"]},
+  {id:"enkomi",name:"Enkomi",lat:35.18,lon:33.90,land:"cyprus",start:true,
+   dep:{fertile:1,copper:4,iron:1},
+   begin:["farm","dwellings","harbour","granary","coppermine","coppermine"]},
+  {id:"knossos",name:"Knossos",lat:35.2921,lon:25.1579,land:"crete",start:true,
+   dep:{fertile:3,forest:1,iron:1,clay:2},
+   begin:["farm","farm","dwellings","harbour","granary","timberyard"]},
+  // other established powers (autonomous unless colonised)
+  {id:"byblos",name:"Byblos",lat:34.1185,lon:35.6475,land:"levant",dep:{fertile:1,forest:4}},
+  {id:"sidon",name:"Sidon",lat:33.560,lon:35.375,land:"levant",dep:{fertile:1,murex:3}},
+  {id:"tel_dor",name:"Tel Dor",lat:32.617,lon:34.917,land:"levant",dep:{fertile:2,forest:1,clay:2}},
+  {id:"ashkelon",name:"Ashkelon",lat:31.667,lon:34.550,land:"levant",dep:{fertile:3,clay:2}},
+  {id:"kition",name:"Kition",lat:34.916,lon:33.634,land:"cyprus",dep:{fertile:1,copper:3,iron:1}},
+  {id:"hala",name:"Hala Sultan Tekke",lat:34.885,lon:33.610,land:"cyprus",dep:{fertile:1,copper:4}},
+  {id:"mycenae",name:"Mycenae",lat:37.7308,lon:22.7561,land:"aegean",dep:{fertile:2,iron:1}},
+  {id:"pylos",name:"Pylos",lat:36.914,lon:21.696,land:"aegean",dep:{fertile:2}},
+  {id:"troy",name:"Troy",lat:39.9575,lon:26.2389,land:"anatolia",dep:{fertile:2,iron:1}},
+  {id:"pi_ramesses",name:"Pi-Ramesses",lat:30.799,lon:31.836,land:"levant",dep:{fertile:6,clay:2}},
+  {id:"sardinia",name:"Sant'Imbenia",lat:40.55,lon:8.28,land:"sardinia",dep:{fertile:2,copper:3,iron:2,silver:1}},
+  // empty coasts — colony sites
+  {id:"rhodes",name:"Rhodes",lat:36.44,lon:28.22,land:"rhodes",empty:true,dep:{fertile:2,forest:1,clay:2}},
+  {id:"kommos",name:"Kommos",lat:34.99,lon:24.76,land:"crete",empty:true,dep:{fertile:2}},
+  {id:"motya",name:"Motya",lat:37.87,lon:12.47,land:"sicily",empty:true,dep:{fertile:2,silver:1}},
+  {id:"utica",name:"Utica",lat:37.06,lon:10.06,land:"africa",empty:true,dep:{fertile:3,forest:1,clay:2}},
+  {id:"carthage",name:"Carthage",lat:36.85,lon:10.32,land:"africa",empty:true,dep:{fertile:3,forest:1,silver:1}},
+  {id:"malta",name:"Malta",lat:35.90,lon:14.51,land:"malta",empty:true,dep:{fertile:1}},
+  {id:"gadir",name:"Gadir",lat:36.53,lon:-6.29,land:"iberia",empty:true,dep:{fertile:1,silver:4,tinroad:1}},
+  {id:"mogador",name:"Mogador",lat:31.51,lon:-9.77,land:"africa",empty:true,dep:{fertile:1,forest:1}},
+  {id:"huelva",name:"Huelva",lat:37.26,lon:-6.95,land:"iberia",empty:true,dep:{fertile:1,copper:3,silver:3}},
+  {id:"hippo",name:"Hippo",lat:36.88,lon:7.76,land:"africa",empty:true,dep:{fertile:2,iron:2}},
+];
+
+/* --- buildings ---
+   Every building is `in` -> `out`. Tier decides processing order within a month,
+   so a chain (ore -> charcoal -> metal -> tools) can flow in one tick.
+   Note charcoal: this is the fuel of the age, and it eats the same forests
+   that build your ships. That competition is the point. */
+const BUILDINGS = [
+  // ---- tier 0: taken from the ground ----
+  {id:"farm",name:"Farmstead",tier:0,dep:"fertile",workers:2,cost:{silver:30,timber:8},
+   out:{grain:3.4}, desc:"Emmer and barley. The first thing any settlement needs."},
+  {id:"grove",name:"Olive grove",tier:0,dep:"fertile",workers:1,cost:{silver:45,timber:10},
+   out:{olives:2.6}, desc:"Slow to bear, then bears for centuries."},
+  {id:"sheepfold",name:"Sheepfold",tier:0,dep:"fertile",workers:1,cost:{silver:40,timber:12},
+   out:{wool:1.8}, desc:"Wool for the loom. Competes with grain for the same ground."},
+  {id:"timberyard",name:"Timber camp",tier:0,dep:"forest",workers:2,cost:{silver:35,timber:5},
+   out:{timber:2.8}, desc:"Cedar and pine, for hulls, beams and the charcoal kilns."},
+  {id:"nursery",name:"Tree nursery",tier:0,dep:null,workers:2,cost:{silver:75,timber:20},
+   replant:0.00055, desc:"Seedlings raised and set out on the cut slopes. Woodland comes back — slowly."},
+  {id:"claypit",name:"Clay pit",tier:0,dep:"clay",workers:1,cost:{silver:30,timber:8},
+   out:{clay:2.6}, desc:"Riverine clay, dug and weathered."},
+  {id:"coppermine",name:"Copper mine",tier:0,dep:"copper",workers:3,cost:{silver:90,timber:26},
+   out:{copperore:3.2}, desc:"Galleries into the ore body. Raises ore, not metal."},
+  {id:"ironmine",name:"Iron mine",tier:0,dep:"iron",workers:3,cost:{silver:70,timber:22},
+   out:{ironore:3.2}, desc:"Ore is common where copper is not. That is the whole point of it."},
+  {id:"tinpost",name:"Tin road post",tier:0,dep:"tinroad",workers:2,cost:{silver:130,timber:30},
+   out:{tin:0.75}, desc:"A factory at the end of the western tin road. The rarest thing you can hold."},
+  {id:"terrace",name:"Terraces",tier:0,dep:null,req:"farm",workers:2,cost:{silver:70,timber:20},
+   out:{grain:1.3}, drought:.5, desc:"Cut into the slope to hold water. Softens a bad decade."},
+
+  // ---- tier 1: fuel ----
+  {id:"kiln",name:"Charcoal kiln",tier:1,dep:null,workers:2,cost:{silver:45,timber:14},
+   in:{timber:2.6}, out:{charcoal:2.0},
+   desc:"Wood burned slow under turf. Every furnace in the city depends on it — and it eats forest."},
+
+  // ---- tier 2: first working ----
+  {id:"smelter",name:"Copper smelter",tier:2,dep:null,workers:2,cost:{silver:80,timber:30},
+   in:{copperore:2.4,charcoal:1.1}, out:{copper:1.7},
+   desc:"Furnaces, tuyeres and a slag heap. Ore and charcoal in, metal out."},
+  {id:"bloomery",name:"Bloomery",tier:2,dep:null,workers:2,cost:{silver:85,timber:28},
+   in:{ironore:2.6,charcoal:1.3}, out:{iron:1.6}, needTech:"bloomery",
+   desc:"Iron worked from the bloom at lower heat. Hungry for fuel."},
+  {id:"silvermine",name:"Silver works",tier:2,dep:"silver",workers:3,cost:{silver:120,timber:30},
+   in:{charcoal:0.7}, out:{silver:5.4},
+   desc:"Argentiferous ore parted in a bone-ash hearth. Pays for everything else."},
+  {id:"press",name:"Beam press",tier:2,dep:null,req:"grove",workers:1,cost:{silver:55,timber:18},
+   in:{olives:2.4}, out:{oil:1.8}, desc:"Oil keeps, travels, and sells in every port."},
+  {id:"weaving",name:"Weaving shed",tier:2,dep:null,workers:2,cost:{silver:60,timber:16},
+   in:{wool:1.7}, out:{cloth:1.3}, desc:"Warp-weighted looms. Cloth is worth far more than fleece."},
+  {id:"potter",name:"Potter's kiln",tier:2,dep:null,workers:2,cost:{silver:55,timber:20},
+   in:{clay:2.0,charcoal:0.5}, out:{pottery:1.6},
+   desc:"Jars and stirrup vases — the containers everything else travels in."},
+
+  // ---- tier 3: finishing ----
+  {id:"forge",name:"Bronze forge",tier:3,dep:null,workers:2,cost:{silver:110,timber:26},
+   in:{copper:1.7,tin:0.19,charcoal:0.6}, out:{bronze:1.5},
+   desc:"Nine parts copper to one of tin. Stops dead the moment tin runs out."},
+  {id:"ironforge",name:"Iron forge",tier:3,dep:null,workers:2,cost:{silver:95,timber:26},
+   in:{iron:2.1,charcoal:0.7}, out:{bronze:1.05}, iron:true, needTech:"bloomery",
+   desc:"Bloomery iron worked at the anvil. Poorer than bronze until you learn to steel it."},
+  {id:"dyeworks",name:"Dye works",tier:3,dep:"murex",workers:2,cost:{silver:100,timber:18},
+   in:{cloth:0.9,charcoal:0.3}, out:{purple:0.85},
+   desc:"Crushed murex and a stench the wind carries off. The costliest cloth in the world."},
+
+  // ---- civic ----
+  {id:"harbour",name:"Harbour",tier:4,dep:null,workers:1,cost:{silver:70,timber:34},
+   harbour:true, desc:"Moles and a sheltered basin. Required before any ship calls here."},
+  {id:"shipyard",name:"Shipyard",tier:4,dep:null,req:"harbour",workers:2,cost:{silver:120,timber:50},
+   shipyard:true, desc:"Lets you lay down hulls, one berth at a time."},
+  {id:"granary",name:"Granary",tier:4,dep:null,workers:1,cost:{silver:60,timber:24},
+   store:120, spoil:.45, desc:"Holds more, and slows what rots in store."},
+  {id:"warehouse",name:"Warehouse",tier:4,dep:null,workers:1,cost:{silver:75,timber:30},
+   store:200, desc:"Bulk storage against the closed season."},
+  {id:"walls",name:"Walls",tier:4,dep:null,workers:1,cost:{silver:150,timber:40},
+   defence:.75, desc:"Cyclopean masonry. Raiders look for an easier shore."},
+  {id:"archive",name:"Scribal archive",tier:4,dep:null,workers:2,cost:{silver:85,timber:20},
+   archive:true, desc:"Tablets, seals, and men who can read them. The seat of learning."},
+  {id:"dwellings",name:"Dwellings",tier:4,dep:null,workers:0,cost:{silver:55,timber:26},
+   housing:14, desc:"Mudbrick courtyard houses. Room for more people, and the hands they bring."},
+  {id:"cistern",name:"Cistern",tier:4,dep:null,workers:1,cost:{silver:70,timber:18},
+   housing:9, desc:"Plastered rock-cut storage. Water is what actually limits a dry-country town."},
+  {id:"clearance",name:"Cleared ground",tier:4,dep:null,workers:1,cost:{silver:65,timber:22},
+   addSlots:4, noPlot:true, desc:"Scrub burned off and stone hauled away. Makes room to build, and occupies none of it."},
+  {id:"drainage",name:"Drained marsh",tier:4,dep:null,req:"farm",workers:2,cost:{silver:110,timber:40},
+   addDep:{fertile:2}, addSlots:1, desc:"Ditches cut through the wetland. New ground fit for the plough."},
+  {id:"gallery",name:"Deep gallery",tier:4,dep:null,workers:3,cost:{silver:160,timber:60},
+   addDep:{copper:1,iron:1}, needDep:"ore", desc:"Following the seam far below the old workings. Opens another mine."},
+  {id:"caravanserai",name:"Caravanserai",tier:4,dep:null,workers:2,cost:{silver:95,timber:28},
+   caravan:34, desc:"Yards, wells and pack animals. Opens overland trade — slow, but no wind or raider touches it."},
+  {id:"quarter",name:"Merchant quarter",tier:4,dep:null,req:"harbour",workers:1,cost:{silver:90,timber:22},
+   trade:.25, desc:"Factors and warehousing for foreign houses. Better terms when you sell."},
+];
+const BLD = {}; BUILDINGS.forEach(b=>BLD[b.id]=b);
+
+const SHIP_CAP = 30, SHIP_COST = {silver:60, timber:45};
+
+
+/* ---------------- research ----------------
+   Insight accrues from people, scribes and contact with foreign ports.
+   Techs gate buildings, improve yields, and open better hulls. */
+const TECHS=[
+  // husbandry
+  {id:"ard",br:"Husbandry",name:"Ox-drawn ard",cost:60,
+   desc:"A share that cuts rather than scratches. Every farmstead yields more."},
+  {id:"canals",br:"Husbandry",name:"Irrigation canals",cost:140,req:"ard",
+   desc:"Channels off the river. Blunts the worst of a drought year."},
+  {id:"press",br:"Husbandry",name:"Beam press",cost:110,req:"ard",
+   desc:"Oil and wine pressed at scale. Groves and dye works earn far more."},
+  // metallurgy
+  {id:"bellows",br:"Metallurgy",name:"Bellows and tuyeres",cost:90,
+   desc:"Forced draught raises furnace heat. Smelters recover more from every ore."},
+  {id:"cupel",br:"Metallurgy",name:"Cupellation",cost:150,req:"bellows",
+   desc:"Parts silver from lead in a bone-ash hearth. Silver mines yield far more."},
+  {id:"bloomery",br:"Metallurgy",name:"Bloomery furnace",cost:170,req:"bellows",
+   desc:"Iron worked from the bloom. Required before any iron forge can be raised."},
+  {id:"carburize",br:"Metallurgy",name:"Carburising and quench",cost:260,req:"bloomery",
+   desc:"Iron taken to steel at the forge. Iron tools finally rival bronze."},
+  {id:"castings",br:"Metallurgy",name:"Lost-wax casting",cost:190,req:"bellows",
+   desc:"Fine bronze work for those who can still get tin. Bronze sells dearer."},
+  // seafaring
+  {id:"mortise",br:"Seafaring",name:"Mortise-and-tenon hull",cost:120,
+   desc:"Planks pegged edge to edge. Stronger hulls, and the merchantman."},
+  {id:"brail",br:"Seafaring",name:"Brailed rig",cost:180,req:"mortise",
+   desc:"Sail shortened from the deck. Faster passages, and better against the wind."},
+  {id:"navigation",br:"Seafaring",name:"Star navigation",cost:240,req:"brail",
+   desc:"Out of sight of land by the pole star. The Etesian season loses much of its bite."},
+  {id:"greatship",br:"Seafaring",name:"Great ship",cost:340,req:"brail",
+   desc:"Deep-hulled bulk carriers. Opens the largest class of vessel."},
+  {id:"sheathing",br:"Seafaring",name:"Pitch and sheathing",cost:150,req:"mortise",
+   desc:"Hulls payed against worm and weed. Ships wear far more slowly."},
+  // administration
+  {id:"weights",br:"Administration",name:"Shekel weights",cost:80,
+   desc:"A standard every port accepts. Better terms wherever you sell."},
+  {id:"alphabet",br:"Administration",name:"Alphabetic script",cost:160,req:"weights",
+   desc:"Writing a clerk can learn in a week, not a decade. Everything is learned faster."},
+  {id:"charters",br:"Administration",name:"Colonial charters",cost:220,req:"alphabet",
+   desc:"Terms agreed before the settlers sail. Founding a colony costs much less."},
+  {id:"relay",br:"Administration",name:"Relay factors",cost:200,req:"weights",
+   desc:"Agents holding stock at each port. Ships wait less and carry more per run."},
+
+  /* ---- the later age ----
+     Opens once enough of the first age is known. These are the crafts of a
+     world learning to do without the long bronze supply lines: harder iron,
+     poorer ground worked better, and ways of holding together when trade fails. */
+  {id:"ploughshare",br:"Husbandry",name:"Iron ploughshare",cost:300,req:"canals",era:2,
+   desc:"An iron share cuts heavy ground the ard only scratched. Every farmstead yields again."},
+  {id:"rotation",br:"Husbandry",name:"Crop rotation",cost:380,req:"ploughshare",era:2,
+   desc:"Fallow and legumes worked into the round. Yields hold where they used to fall away."},
+  {id:"shaduf",br:"Husbandry",name:"Water lifting",cost:340,req:"canals",era:2,
+   desc:"Counterweighted sweeps raising water to the terraces. A dry decade hurts far less."},
+
+  {id:"cementation",br:"Metallurgy",name:"Cementation steel",cost:460,req:"carburize",era:2,
+   desc:"Iron packed in charcoal for days until it takes carbon. Iron tools finally surpass bronze."},
+  {id:"retort",br:"Metallurgy",name:"Sealed charcoal kiln",cost:320,req:"bellows",era:2,
+   desc:"Burning under a sealed earth mound. Far more charcoal from the same timber."},
+  {id:"salvage",br:"Metallurgy",name:"Salvage and remelt",cost:290,req:"bloomery",era:2,
+   desc:"Broken bronze gathered and recast rather than mourned. Forges run on far less tin."},
+
+  {id:"keel",br:"Seafaring",name:"Deep keel",cost:420,req:"greatship",era:2,
+   desc:"A true keel under the hull. Steadier in weather, and slower to work loose."},
+  {id:"beacons",br:"Seafaring",name:"Harbour beacons",cost:300,req:"navigation",era:2,
+   desc:"Fires kept on the headlands. Ships make port that would once have stood off all night."},
+  {id:"convoy",br:"Seafaring",name:"Convoy discipline",cost:380,req:"beacons",era:2,
+   desc:"Sailing in company under signals. Raiders take far less from a fleet that keeps station."},
+
+  {id:"coinage",br:"Administration",name:"Stamped bullion",cost:400,req:"alphabet",era:2,
+   desc:"Silver cut and stamped to a known weight. Every bargain struck is a better one."},
+  {id:"credit",br:"Administration",name:"Letters of credit",cost:480,req:"coinage",era:2,
+   desc:"Debts settled between houses without moving metal. Your purse stretches further abroad."},
+  {id:"roads",br:"Administration",name:"Made roads",cost:360,req:"relay",era:2,
+   desc:"Metalled and drained tracks between inland towns. Caravans move half again as fast."},
+
+  {id:"hillforts",br:"Endurance",name:"Hill forts",cost:260,req:"bloomery",era:2,
+   desc:"Refuges above the fields, walled in dry stone. A raided city loses far less."},
+  {id:"selfsufficiency",br:"Endurance",name:"Household craft",cost:330,req:"hillforts",era:2,
+   desc:"Weaving, potting and smithing done in the yard rather than bought. Shortage bites slower."},
+  {id:"granaryrite",br:"Endurance",name:"Sealed granaries",cost:300,req:"hillforts",era:2,
+   desc:"Pit stores lined and sealed against damp and vermin. Far less of the harvest is lost."},
+  {id:"memory",br:"Endurance",name:"Kept memory",cost:420,req:"selfsufficiency",era:2,
+   desc:"Songs, lists and lineages held when the archives burn. Learning survives a ruined age."},
+];
+const TECHBY={}; TECHS.forEach(t=>TECHBY[t.id]=t);
+const BRANCHES=["Husbandry","Metallurgy","Seafaring","Administration","Endurance"];
+/* The later age opens once the first is well understood. */
+const ERA2_AT=8;
+function eraOpen(){ return G.research.done.filter(id=>!(TECHBY[id]||{}).era).length >= ERA2_AT; }
+
+function hasTech(id){ return G && G.research.done.includes(id); }
+function techOpen(t){
+  if(t.era===2 && !eraOpen()) return false;
+  return !t.req || hasTech(t.req);
+}
+
+function insightPerMonth(){
+  let v=0.8;
+  G.cities.forEach(c=>{
+    v += c.pop*0.075;
+    if(hasBld(c,"quarter")) v+=0.9;
+    v += countBld(c,"archive")*2.4;
+  });
+  v += G.routes.filter(r=>!isOwned(r.to)).length*0.45;   // contact with foreign ports
+  if(hasTech("alphabet")) v*=1.35;
+  return v;
+}
+function researchTick(){
+  const r=G.research;
+  r.points += insightPerMonth()*RATE;
+  if(r.current){
+    const t=TECHBY[r.current];
+    if(r.points >= t.cost){
+      r.points -= t.cost;
+      r.done.push(t.id);
+      r.current=null;
+      log(`Learned: <b>${t.name}</b>.`);
+    }
+  }
+}
+
+/* ---------------- ships ---------------- */
+const SHIP_CLASSES=[
+  {id:"coaster",name:"Coaster",cap:30,speed:1.0,cost:{silver:60,timber:45},months:4,tech:null,
+   desc:"A small hull for hugging the shore."},
+  {id:"merchantman",name:"Merchantman",cap:62,speed:1.05,cost:{silver:140,timber:90},months:6,tech:"mortise",
+   desc:"The workhorse of the sea lanes."},
+  {id:"galley",name:"War galley",cap:14,speed:1.18,cost:{silver:150,timber:80},months:5,tech:"mortise",
+   war:true, desc:"Oared and crewed for a fight. Carries little; guards much."},
+  {id:"greatship",name:"Great ship",cap:120,speed:0.95,cost:{silver:290,timber:170},months:9,tech:"greatship",
+   desc:"Slow, vast, and worth a fleet of coasters."},
+];
+const SHIPCLS={}; SHIP_CLASSES.forEach(c=>SHIPCLS[c.id]=c);
+
+const REFITS=[
+  {id:"hold",name:"Deepened hold",cost:{silver:70,timber:40},capMul:1.3,
+   desc:"More cargo, a little more sluggish.",speedMul:.95},
+  {id:"rig",name:"New rig",cost:{silver:90,timber:30},speedMul:1.22,tech:"brail",
+   desc:"Faster passages in any wind."},
+  {id:"sheath",name:"Sheathed hull",cost:{silver:80,timber:35},wearMul:.45,tech:"sheathing",
+   desc:"Slows the rot. Far fewer refits."},
+];
+const REFITBY={}; REFITS.forEach(r=>REFITBY[r.id]=r);
+
+let SHIP_SEQ=0;
+function makeShip(clsId,at){
+  const cls=SHIPCLS[clsId];
+  return {id:++SHIP_SEQ, cls:clsId, at, wear:0, refits:[],
+          name:shipName()};
+}
+const SHIP_NAMES=["Gull","Astarte","Cedar","Sea-Ox","Pole Star","Melqart","Wave-Rider",
+  "Salt Mare","North Wind","Oxhide","Long Reach","Dolphin","Kothar","Evening Star","Anat"];
+function shipName(){ return SHIP_NAMES[(SHIP_SEQ-1)%SHIP_NAMES.length] + (SHIP_SEQ>SHIP_NAMES.length?" "+Math.ceil(SHIP_SEQ/SHIP_NAMES.length):""); }
+
+function shipCap(sh){
+  let c=SHIPCLS[sh.cls].cap;
+  sh.refits.forEach(r=>{ if(REFITBY[r].capMul) c*=REFITBY[r].capMul; });
+  if(hasTech("relay")) c*=1.12;
+  return c*(1-Math.min(.5,sh.wear*0.45));      // a tired hull carries less
+}
+function shipSpeed(sh){
+  let v=SHIPCLS[sh.cls].speed;
+  sh.refits.forEach(r=>{ if(REFITBY[r].speedMul) v*=REFITBY[r].speedMul; });
+  if(hasTech("brail")) v*=1.1;
+  return v*(1-Math.min(.4,sh.wear*0.35));
+}
+function shipWearRate(sh){
+  let w=0.006*RATE;
+  sh.refits.forEach(r=>{ if(REFITBY[r].wearMul) w*=REFITBY[r].wearMul; });
+  if(hasTech("keel")) w*=0.75;
+  if(hasTech("sheathing")) w*=0.8;
+  return w;
+}
+function refitCost(sh){
+  const base=SHIPCLS[sh.cls].cost;
+  return {silver:Math.round(base.silver*0.35), timber:Math.round(base.timber*0.4)};
+}
+function routeShips(r){ return r.ships.map(id=>G.ships.find(s=>s.id===id)).filter(Boolean); }
+function routeCap(r){ return routeShips(r).reduce((a,s)=>a+shipCap(s),0); }
+function routeSpeed(r){
+  const ss=routeShips(r);
+  if(!ss.length) return 1;
+  return Math.min(...ss.map(shipSpeed));       // the convoy keeps to its slowest
+}
+
+
+/* ---------------- coastline ----------------
+   Hand-traced simplified outlines in [lon,lat]. Accurate enough to navigate
+   by and to make each site's position legible; not a survey chart. */
+const LAND=[
+  // Europe + Anatolia: traced west to east along the shore, closed off the top
+  [[-11,44],[-9.5,43.0],[-9.4,38.7],[-8.9,37.0],[-6.9,37.2],[-6.3,36.6],[-5.4,36.1],
+   [-4.4,36.7],[-2.1,36.7],[-0.8,37.6],[-0.2,39.0],[0.2,39.9],[0.9,40.7],[2.2,41.4],
+   [3.2,42.4],[4.8,43.4],[6.0,43.1],[7.7,43.8],[9.0,44.4],[10.0,44.0],[10.3,43.0],
+   [11.2,42.4],[12.3,41.7],[13.0,41.2],[14.0,40.8],[15.3,40.0],[15.9,39.4],[16.1,38.6],
+   [15.6,38.0],[16.6,38.5],[17.1,39.4],[17.2,40.5],[18.0,40.1],[18.5,40.2],[18.0,40.7],
+   [17.0,41.1],[16.0,41.9],[15.1,42.0],[14.0,42.3],[13.5,43.6],[12.3,44.5],[13.6,45.5],
+   [14.5,45.0],[15.3,44.2],[16.5,43.1],[17.5,42.7],[18.5,42.4],[19.3,41.9],[19.9,40.5],
+   [20.9,39.6],[20.7,38.8],[21.3,38.3],[21.1,37.7],[21.6,37.2],[22.1,36.8],[22.5,36.4],
+   [23.2,36.4],[23.1,37.0],[23.6,37.5],[23.0,38.0],[23.7,38.0],[24.0,38.4],[23.4,38.9],
+   [23.0,39.3],[22.7,40.3],[23.7,40.5],[24.3,40.9],[25.9,40.9],[26.2,40.1],[26.7,40.4],
+   [27.5,40.8],[29.0,41.0],[26.2,39.5],[26.8,38.9],[26.8,38.4],[27.2,37.9],[27.4,37.1],
+   [27.9,36.7],[28.9,36.7],[29.7,36.2],[30.5,36.3],[31.0,36.8],[32.0,36.1],[33.0,36.3],
+   [34.0,36.3],[35.0,36.6],[35.7,36.1],[35.9,35.5],[35.8,34.9],[35.5,34.1],[35.2,33.3],
+   [35.0,32.5],[34.6,31.6],[34.2,31.2],[42,30.5],[42,45],[-11,45]],
+  // Africa
+  [[-12,29],[-9.8,31.5],[-9.3,32.6],[-8.5,33.3],[-7.6,33.6],[-6.8,34.0],[-5.9,35.8],
+   [-5.3,35.9],[-4.3,35.2],[-3.0,35.2],[-2.2,35.1],[-1.2,35.7],[0.0,35.9],[1.0,36.5],
+   [2.9,36.8],[4.8,36.9],[6.0,37.0],[7.0,37.1],[8.2,37.0],[9.8,37.3],[10.3,37.1],
+   [10.8,36.8],[11.1,36.4],[10.7,35.7],[10.5,34.8],[11.0,34.0],[11.5,33.5],[10.5,33.2],
+   [10.0,33.6],[11.5,32.9],[13.2,32.9],[15.2,32.4],[16.6,31.3],[18.0,30.3],[19.2,30.3],
+   [20.0,30.9],[20.6,32.0],[21.7,32.9],[23.1,32.6],[24.5,32.0],[25.2,31.6],[26.5,31.4],
+   [28.0,31.0],[29.9,31.2],[31.0,31.5],[32.0,31.1],[33.2,31.2],[34.2,31.2],[42,30.5],
+   [42,29],[-12,29]],
+  // islands
+  [[12.4,38.0],[13.4,38.2],[14.5,38.1],[15.2,38.3],[15.6,38.1],[15.1,37.5],[15.3,37.0],[14.5,36.7],[13.2,37.1]],            // Sicily
+  [[8.2,41.1],[9.2,41.2],[9.6,40.9],[9.7,40.3],[9.5,39.5],[9.6,39.1],[8.9,38.9],[8.4,39.1],[8.4,39.9],[8.2,40.5]],          // Sardinia
+  [[8.6,42.6],[9.4,42.7],[9.5,42.2],[9.4,41.6],[9.2,41.4],[8.8,41.5],[8.6,42.0]],                                            // Corsica
+  [[23.5,35.3],[24.5,35.5],[25.5,35.3],[26.3,35.3],[26.3,35.0],[25.0,34.9],[24.0,35.0],[23.5,35.1]],                        // Crete
+  [[32.3,35.1],[33.5,35.4],[34.6,35.7],[34.5,35.1],[33.9,34.9],[33.0,34.6],[32.4,34.6]],                                     // Cyprus
+  [[2.3,39.9],[3.5,39.8],[3.2,39.3],[2.4,39.5]],                                                                             // Mallorca
+  [[1.2,39.1],[1.6,39.1],[1.5,38.8],[1.2,38.9]],                                                                             // Ibiza
+  [[14.2,36.0],[14.6,36.0],[14.5,35.8],[14.2,35.8]],                                                                         // Malta
+  [[27.7,36.4],[28.2,36.4],[28.2,36.0],[27.8,35.9]],                                                                         // Rhodes
+  [[23.0,38.6],[24.0,38.8],[24.6,38.4],[23.5,38.2]],                                                                         // Euboea
+  [[26.0,39.2],[26.6,39.3],[26.5,39.0],[26.0,39.0]],                                                                         // Lesbos
+  [[24.8,37.5],[25.2,37.6],[25.3,37.3],[24.9,37.3]],                                                                         // Naxos-ish
+  [[20.5,38.4],[20.9,38.5],[21.0,38.1],[20.6,38.1]],                                                                         // Cephalonia
+];
+
+/* --- geometry --- */
+const R_NM=3440.065, rad=d=>d*Math.PI/180;
+function nmBetween(a,b){
+  const dLa=rad(b.lat-a.lat), dLo=rad(b.lon-a.lon);
+  const h=Math.sin(dLa/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLo/2)**2;
+  return 2*R_NM*Math.asin(Math.sqrt(h))*1.18;   // coastal detour
+}
+/* A tick is one week. Rates below are written per month because that is how
+   they read naturally, so RATE scales them down; durations written in months
+   are pushed up by WPM. */
+const WPY=52, WPM=52/12, RATE=12/52;
+const MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const monthOf = t => Math.floor((t%WPY)/WPM);
+const isEtesian = t => monthOf(t)>=4 && monthOf(t)<=8;
+
+/* voyage length in WEEKS; long westbound legs stall in the Etesian season */
+function legMonths(a,b,t,speed){
+  const nm=nmBetween(a,b);
+  const v=speed||1;
+  let m=Math.max(1,Math.round(nm/(430*v*(hasTech("beacons")?1.12:1))*evMul("seaMul")));
+  if(isEtesian(t) && b.lon < a.lon-1.5 && nm>380){
+    const bite = hasTech("navigation") ? 1.4 : 2.2;   // the pole star takes the sting out
+    m=Math.round(m*bite)+1;
+  }
+  return Math.max(1, Math.round(m*WPM));
+}
+
+/* =================== state =================== */
+let G=null;
+
+function newCity(siteId, founded){
+  const s=siteById(siteId);
+  /* Nowhere starts as bare ground. An established seat already has its farms,
+     its harbour and whatever its land is known for; settlers at least put up
+     shelters before anything else. */
+  const begin = founded ? ["dwellings","clearance"] : (s.begin || ["farm","dwellings","harbour"]);
+  const c={id:siteId,name:s.name,lat:s.lat,lon:s.lon,dep:s.dep,
+    owned:true, pop: founded?3:11, buildings:begin.slice(), stock:{}, founded:founded||false,
+    build:null, ships:null, unrest:0};
+  GOODS.forEach(g=>c.stock[g]=0);
+  c.forest=1;          // standing woodland, 0..1 — cutting lowers it
+  c.reserve={};        // stock a process may not draw below
+  c.throttle={};       // how hard each kind of works is allowed to run, 0..1
+  c.stock.grain=45; c.stock.timber=70;
+  return c;
+}
+
+function newWorld(startId){
+  const world={};
+  SITES.forEach(s=>{
+    if(s.empty) return;
+    const price={}; GOODS.forEach(g=>price[g]=BASE_PRICE[g]*(0.8+Math.random()*0.5));
+    // foreign ports: what they want dearly, what they dump cheap
+    // a port sells cheap what its land gives, and pays dear for what it lacks
+    if(s.dep.copper){ price.copperore*=0.5; price.copper*=0.7; }
+    if(s.dep.iron){ price.ironore*=0.5; }
+    if(s.dep.forest){ price.timber*=0.55; price.charcoal*=0.75; }
+    if(s.dep.clay) price.clay*=0.55;
+    if(s.dep.murex) price.purple*=0.8;
+    if(s.dep.fertile>=3){ price.grain*=0.6; price.wool*=0.8; }
+    if(!s.dep.copper){ price.copperore*=1.4; price.copper*=1.5; }
+    if(!s.dep.forest){ price.timber*=1.5; price.charcoal*=1.45; }
+    price.tin*=1.15;
+    world[s.id]={id:s.id,name:s.name,lat:s.lat,lon:s.lon,price,demandDrift:{}};
+  });
+  return world;
+}
+
+function newGame(startId){
+  const g={
+    t:0, year:0, running:false,
+    cities:[newCity(startId,false)],
+    ships:[], routes:[], log:[],
+    silver:420, tinFlow:1, nextRoute:1,
+    research:{points:0, done:[], current:null},
+    expeditions:[], events:[], contracts:[], history:[], nextContract:1, custom:[],
+    visitors:[], nextVisitor:1,
+    rivals:RIVAL_DEFS.map(r=>({...r, cities:[], silver:260})),
+    sel:startId, tab:"build",
+    world:newWorld(startId),
+  };
+  delete g.world[startId];
+  SHIP_SEQ=0;
+  g.ships.push(makeShip('coaster',startId), makeShip('coaster',startId));
+  return g;
+}
+
+/* =================== helpers =================== */
+const cityById = id => G.cities.find(c=>c.id===id);
+const siteById = id => (G&&G.custom? SITES.concat(G.custom):SITES).find(s=>s.id===id);
+const isOwned  = id => !!cityById(id);
+
+function countBld(c,id){ return c.buildings.filter(b=>b===id).length; }
+function workersUsed(c){ return c.buildings.reduce((a,b)=>a+BLD[b].workers,0); }
+function workersFree(c){ return Math.floor(c.pop) - workersUsed(c); }
+function hasBld(c,id){ return c.buildings.includes(id); }
+
+function storeCap(c){
+  let cap=140;
+  c.buildings.forEach(b=>{ if(BLD[b].store) cap+=BLD[b].store; });
+  return cap;
+}
+function depFree(c,type){
+  if(!type) return 99;
+  let total=c.dep[type]||0;
+  c.buildings.forEach(b=>{ const a=BLD[b].addDep; if(a&&a[type]) total+=a[type]; });
+  const used=c.buildings.filter(b=>BLD[b].dep===type).length;
+  return total-used;
+}
+function canBuild(c,b){
+  if(!b.noPlot && slotsFree(c)<=0) return "no room yet";
+  if(b.needDep==="ore" && !((c.dep.copper||0)+(c.dep.iron||0))) return "no ore here";
+  if(b.needTech && !hasTech(b.needTech)) return "needs "+TECHBY[b.needTech].name.toLowerCase();
+  if(b.dep && depFree(c,b.dep)<=0) return "no deposit";
+  if(b.req && !hasBld(c,b.req)) return "needs "+BLD[b.req].name.toLowerCase();
+  if(b.harbour && hasBld(c,"harbour")) return "built";
+  if(b.shipyard && hasBld(c,"shipyard")) return "built";
+  if(b.defence && hasBld(c,"walls")) return "built";
+  if(workersFree(c) < b.workers) return "no hands";
+  if(G.silver < b.cost.silver) return "silver";
+  if(c.stock.timber < b.cost.timber) return "timber";
+  if(c.build) return "busy";
+  return null;
+}
+
+function log(msg){
+  G.log.unshift({y:G.year,msg});
+  if(G.log.length>50) G.log.pop();
+}
+
+/* ---------------- settlement stages ----------------
+   A colony is a camp before it is a city. Stage caps how much can stand there,
+   so a new foundation must actually grow before it can be built out. */
+const STAGES=[
+  {name:"Camp",       pop:0,  slots:4},
+  {name:"Village",    pop:7,  slots:8},
+  {name:"Town",       pop:16, slots:14},
+  {name:"City",       pop:30, slots:21},
+  {name:"Great city", pop:50, slots:29},
+];
+function stageOf(c){
+  let st=STAGES[0];
+  STAGES.forEach(x=>{ if(c.pop>=x.pop) st=x; });
+  return st;
+}
+/* Plots can be won from the land as well as granted by growth. */
+function extraSlots(c){
+  return c.buildings.reduce((a,b)=>a+(BLD[b].addSlots||0),0);
+}
+function totalSlots(c){ return stageOf(c).slots + extraSlots(c); }
+function plotsUsed(c){ return c.buildings.filter(b=>!BLD[b].noPlot).length; }
+function slotsFree(c){ return totalSlots(c) - plotsUsed(c); }
+
+/* How many people the place can hold, and how fast they arrive. */
+function popCap(c){
+  let cap = 10 + STAGES.indexOf(stageOf(c))*4;
+  c.buildings.forEach(b=>{ cap += (BLD[b].housing||0); });
+  return cap;
+}
+
+
+/* ---------------- events ----------------
+   Nothing here is scheduled. Each is a spell of good or bad fortune that
+   arrives, lasts a while, and passes — so no two runs share a history. */
+const EVENTS=[
+  {id:"drought", name:"Drought", weight:11, mo:[18,60], bad:true,
+   grainMul:0.55, msg:"The rains fail. Harvests thin across the sea.",
+   over:"The rains return."},
+  {id:"harshdrought", name:"Long drought", weight:4, mo:[48,120], bad:true,
+   grainMul:0.38, msg:"Year after year the rains fail. This one will not pass quickly.",
+   over:"The long drought breaks at last."},
+  {id:"tincut", name:"Tin road cut", weight:10, mo:[12,48], bad:true,
+   tinMul:0.15, msg:"The tin road is cut. Nothing is coming through.",
+   over:"The tin road opens again."},
+  {id:"tinslow", name:"Tin road troubled", weight:9, mo:[12,36], bad:true,
+   tinMul:0.5, msg:"Word comes that the tin road is troubled. Less arrives each season.",
+   over:"The tin road runs freely once more."},
+  {id:"storms", name:"Storm years", weight:10, mo:[10,30], bad:true,
+   seaMul:1.6, msg:"The sea turns ugly. Passages take far longer.",
+   over:"The sea settles."},
+  {id:"pirates", name:"Raiders at sea", weight:8, mo:[12,40], bad:true,
+   piracy:0.05, msg:"Raiders work the sea lanes. Cargoes go missing.",
+   over:"The raiders have moved on."},
+  {id:"plague", name:"Pestilence", weight:6, mo:[8,24], bad:true,
+   popDrain:0.10, msg:"Sickness spreads through the ports.",
+   over:"The sickness has burned itself out."},
+  {id:"blight", name:"Blight", weight:7, mo:[10,26], bad:true,
+   grainMul:0.68, msg:"A blight takes the standing crop.",
+   over:"The fields come clean again."},
+  {id:"firewood", name:"Forest fires", weight:5, mo:[6,16], bad:true,
+   timberMul:0.45, msg:"Fires run through the hill forests.",
+   over:"The burned slopes are quiet again."},
+  // fortune runs both ways
+  {id:"goodrains", name:"Good rains", weight:10, mo:[18,50],
+   grainMul:1.45, msg:"Season after season of good rain. The granaries fill.",
+   over:"The good years end."},
+  {id:"richseam", name:"Rich seam", weight:8, mo:[24,60],
+   oreMul:1.6, msg:"A rich seam is struck. The mines run heavy.",
+   over:"The rich seam is worked out."},
+  {id:"tinglut", name:"Tin flows freely", weight:7, mo:[18,48],
+   tinMul:1.8, msg:"The tin road is busy — more arrives than anyone expected.",
+   over:"The tin road returns to its usual trickle."},
+  {id:"calm", name:"Calm seasons", weight:8, mo:[14,36],
+   seaMul:0.72, msg:"A run of settled weather. Passages are quick.",
+   over:"The settled weather ends."},
+  {id:"demand", name:"Foreign demand", weight:9, mo:[16,44],
+   demandMul:1.7, msg:"Word of a hungry market abroad. Prices are up.",
+   over:"The foreign appetite cools."},
+];
+
+function rollEvents(){
+  // decay and expire
+  for(let i=G.events.length-1;i>=0;i--){
+    const ev=G.events[i];
+    ev.left--;
+    if(ev.left<=0){
+      log(EVENTS.find(x=>x.id===ev.id).over);
+      G.events.splice(i,1);
+    }
+  }
+  // roughly one new turn of fortune every four years
+  if(OPTS.eventRate<=0) return;
+  if(Math.random()>0.021*RATE*OPTS.eventRate) return;
+  const pool=EVENTS.filter(e=>!G.events.some(a=>a.id===e.id));
+  if(!pool.length) return;
+  const total=pool.reduce((a,e)=>a+e.weight,0);
+  let r=Math.random()*total, pick=pool[0];
+  for(const e of pool){ r-=e.weight; if(r<=0){ pick=e; break; } }
+  const len=Math.round((pick.mo[0]+Math.floor(Math.random()*(pick.mo[1]-pick.mo[0]+1)))*WPM);
+  G.events.push({id:pick.id,left:len,total:len});
+  log(pick.msg);
+  if(OPTS.pauseOnEvent){ G.running=false; setPlayLabel(); }
+}
+
+/* combined effect of everything currently in play */
+function evMul(field, dflt){
+  let v=dflt===undefined?1:dflt;
+  G.events.forEach(a=>{
+    const e=EVENTS.find(x=>x.id===a.id);
+    if(e && e[field]!==undefined) v*= e[field];
+  });
+  return v;
+}
+function evSum(field){
+  let v=0;
+  G.events.forEach(a=>{
+    const e=EVENTS.find(x=>x.id===a.id);
+    if(e && e[field]!==undefined) v+=e[field];
+  });
+  return v;
+}
+function activeEvents(){
+  return G.events.map(a=>({...EVENTS.find(x=>x.id===a.id), left:a.left, total:a.total}));
+}
+
+
+/* ---------------- rival houses ----------------
+   Other powers work the same sea. They plant colonies on the coasts you were
+   eyeing, and their appetite shows up in prices everywhere. */
+const RIVAL_DEFS=[
+  {id:"r1", name:"House of Sidon",  home:"sidon",  colour:"#C96A4A"},
+  {id:"r2", name:"House of Byblos", home:"byblos", colour:"#B89A4C"},
+  {id:"r3", name:"Kition merchants",home:"hala",   colour:"#7B9BD6"},
+];
+
+function rivalOwns(siteId){ return G.rivals && G.rivals.some(r=>r.cities.includes(siteId)); }
+function rivalOf(siteId){ return (G.rivals||[]).find(r=>r.cities.includes(siteId)); }
+
+function rivalTick(){
+  if(!G.rivals) return;
+  G.rivals.forEach(r=>{
+    // upkeep: factors, hulls and garrisons all have to be paid for
+    r.silver += (0.8 + r.cities.length*0.4)*RATE;
+    r.silver -= (1.1 + r.cities.length*1.8)*RATE;
+    if(evMul('grainMul')<0.8) r.silver -= 1.6*RATE;   // lean years cost them too   // the rest comes from trading
+    if(G.year < 35) return;                 // they take time to look outward too
+    if(r.cities.length >= 2) return;        // no house swallows the whole sea
+    if(G.t % 39 !== 0) return;
+    const cost = 340 + r.cities.length*300;
+    if(r.silver < cost) return;
+    // take the nearest unclaimed coast to anything they already hold
+    const held=[r.home,...r.cities].map(id=>siteById(id)).filter(Boolean);
+    let best=null;
+    SITES.forEach(site=>{
+      if(!site.empty || isOwned(site.id) || rivalOwns(site.id)) return;
+      const d=Math.min(...held.map(h=>nmBetween(h,site)));
+      if(d>1400) return;
+      if(!best || d<best.d) best={site,d};
+    });
+    if(!best || Math.random()>0.4) return;
+    r.silver-=cost;
+    r.cities.push(best.site.id);
+    log(`<b>${r.name}</b> plants a colony at ${best.site.name}.`);
+  });
+}
+
+
+/* ---------------- rival trade ----------------
+   A rival house is not just a flag on a coast. What its territory yields, it
+   sells; what its territory lacks, it buys — and both move prices at the ports
+   it works. You are competing for the same cargo. */
+function rivalProfile(r){
+  const held=[r.home,...r.cities].map(id=>siteById(id)).filter(Boolean);
+  const dep={};
+  held.forEach(s=>{ for(const k in (s.dep||{})) dep[k]=(dep[k]||0)+s.dep[k]; });
+  const sells=[], buys=[];
+  if(dep.copper) sells.push("copperore","copper");
+  if(dep.iron) sells.push("ironore");
+  if(dep.forest) sells.push("timber","charcoal");
+  if(dep.fertile>=4) sells.push("grain");
+  if(dep.murex) sells.push("purple");
+  if(dep.silver) sells.push("silver");
+  if(dep.clay) sells.push("pottery");
+  if(!dep.forest) buys.push("timber");
+  if(!dep.copper) buys.push("copper");
+  if((dep.fertile||0)<3) buys.push("grain");
+  buys.push("tin","bronze");
+  return {sells:[...new Set(sells)], buys:[...new Set(buys)], reach:held};
+}
+
+function rivalTradeTick(){
+  if(!G.rivals) return;
+  G.rivals.forEach(r=>{
+    if(G.t % 6 !== (r.id.charCodeAt(1) % 6)) return;   // they don't all act at once
+    const prof=rivalProfile(r);
+    if(!prof.reach.length) return;
+    // they work the ports nearest their holdings
+    const ports=Object.values(G.world)
+      .map(w=>({w, d:Math.min(...prof.reach.map(h=>nmBetween(h,w)))}))
+      .filter(x=>x.d<900).sort((a,b)=>a.d-b.d).slice(0,4);
+    if(!ports.length) return;
+    const port=ports[Math.floor(Math.random()*ports.length)].w;
+
+    // sell what their ground gives — the price there falls
+    if(prof.sells.length && Math.random()<0.7){
+      const g=prof.sells[Math.floor(Math.random()*prof.sells.length)];
+      const vol=18+Math.random()*46;
+      port.price[g]=Math.max(BASE_PRICE[g]*0.3, port.price[g]*(1-vol/900));
+      r.silver=Math.min(14000, r.silver + vol*port.price[g]*0.16);
+      r.lastAct={kind:"sold", good:g, port:port.name};
+    }
+    // buy what they lack — the price there rises
+    if(prof.buys.length && Math.random()<0.7){
+      const g=prof.buys[Math.floor(Math.random()*prof.buys.length)];
+      const vol=15+Math.random()*40;
+      const cost=vol*port.price[g]*0.07;
+      if(r.silver>cost){
+        r.silver-=cost;
+        port.price[g]=Math.min(BASE_PRICE[g]*4.2, port.price[g]*(1+vol/760));
+        r.lastAct={kind:"bought", good:g, port:port.name};
+      }
+    }
+  });
+}
+
+/* They will take a contract you leave sitting. */
+function rivalContractTick(){
+  if(!G.rivals || !G.contracts) return;
+  if(G.t % 13 !== 0) return;
+  const open=G.contracts.filter(k=>!k.taken);
+  if(!open.length) return;
+  const k=open[Math.floor(Math.random()*open.length)];
+  // the longer it has sat, the likelier someone else takes it
+  const sat=1-(k.monthsLeft/(11*WPY));
+  if(Math.random() > 0.18+sat*0.4) return;
+  const r=G.rivals[Math.floor(Math.random()*G.rivals.length)];
+  r.silver += contractValue(k)*0.2;
+  G.contracts=G.contracts.filter(x=>x.id!==k.id);
+  log(`<b>${r.name}</b> takes the contract for ${GOOD_NAME[k.good].toLowerCase()} at ${k.portName}.`);
+}
+
+/* ---------------- standing contracts ---------------- */
+function contractValue(k){ return k.qty*k.price; }
+function newContract(){
+  const ports=Object.values(G.world);
+  if(!ports.length) return null;
+  const port=ports[Math.floor(Math.random()*ports.length)];
+  const pool=TRADEABLE.filter(g=>BASE_PRICE[g]>=2.2);
+  const good=pool[Math.floor(Math.random()*pool.length)];
+  const qty=40+Math.floor(Math.random()*10)*20;
+  const price=+(port.price[good]*(1.35+Math.random()*0.6)).toFixed(2);
+  return {id:G.nextContract++, port:port.id, portName:port.name, good, qty,
+          price, delivered:0, monthsLeft:(4+Math.floor(Math.random()*7))*WPY, taken:false};
+}
+function contractTick(){
+  G.contracts=G.contracts||[];
+  for(let i=G.contracts.length-1;i>=0;i--){
+    const k=G.contracts[i];
+    k.monthsLeft--;
+    if(k.monthsLeft<=0){
+      if(k.taken && k.delivered<k.qty){
+        const fine=Math.round(contractValue(k)*0.12);
+        G.silver=Math.max(0,G.silver-fine);
+        log(`The contract for ${GOOD_NAME[k.good].toLowerCase()} at <b>${k.portName}</b> lapsed unfilled. ${fine} silver forfeit.`);
+      }
+      G.contracts.splice(i,1);
+    }
+  }
+  const open=G.contracts.filter(k=>!k.taken).length;
+  if(open<3 && G.t%30===0 && Math.random()<0.5){
+    const k=newContract();
+    if(k) G.contracts.push(k);
+  }
+}
+/* a delivery counts against any contract you hold for that port and good */
+function applyContracts(portId, good, qty){
+  let paid=0, left=qty;
+  (G.contracts||[]).forEach(k=>{
+    if(!k.taken || k.port!==portId || k.good!==good || left<=0) return;
+    const need=k.qty-k.delivered;
+    const take=Math.min(need,left);
+    if(take<=0) return;
+    k.delivered+=take; left-=take;
+    paid+=take*k.price;
+    if(k.delivered>=k.qty){
+      const bonus=Math.round(contractValue(k)*0.18);
+      G.silver+=bonus;
+      log(`Contract filled at <b>${k.portName}</b> — ${bonus} silver in bonus.`);
+      k.done=true;
+    }
+  });
+  G.contracts=(G.contracts||[]).filter(k=>!k.done);
+  return {paid,left};
+}
+
+/* ---------------- caravans ---------------- */
+function caravanCap(c){ return c.buildings.reduce((a,b)=>a+(BLD[b].caravan||0),0); }
+function sameLand(a,b){ return a && b && a.land && b.land && a.land===b.land; }
+function landMonths(a,b){ return Math.max(1, Math.round(nmBetween(a,b)/(hasTech("roads")?315:210)*WPM)); }
+
+/* ---------------- escorts ---------------- */
+function shipRoute(sh){ return G.routes.find(r=>r.ships.includes(sh.id)); }
+/* Crews can only be shifted while the ship is actually in port — you cannot
+   reassign a hull that is three weeks out at sea. */
+function routeInPort(r){ return !r.land && (r.phase==="load" || !r.phase); }
+/* Change where a route runs. Only in port: a ship halfway to Carthage cannot
+   be told it is going to Gadir instead. */
+function retargetBlocked(r, fromId, toId){
+  if(!routeInPort(r) && !r.land) return "at sea";
+  if(r.land && r.phase!=="load") return "on the road";
+  const from=cityById(fromId);
+  if(!from) return "that is not your city";
+  if(!hasBld(from,"harbour") && !r.land) return `${from.name} has no harbour`;
+  if(fromId===toId) return "a route needs two different ports";
+  if(r.land){
+    const a=siteById(fromId), b=siteById(toId);
+    if(!sameLand(a,b)) return "no road runs between those";
+    if(caravanCap(from)<1) return `${from.name} has no caravanserai`;
+  } else if(isOwned(toId) && !hasBld(cityById(toId),"harbour")){
+    return "that city has no harbour";
+  }
+  return null;
+}
+function retarget(r, fromId, toId){
+  if(retargetBlocked(r, fromId, toId)) return false;
+  const oldFrom=cityById(r.from), oldTo=isOwned(r.to)?cityById(r.to):G.world[r.to];
+  // anything already loaded goes back into the store it came from
+  if(cargoTotal(r.cargo)>0 && oldFrom){
+    const lim=storeCap(oldFrom);
+    for(const g in r.cargo) oldFrom.stock[g]=Math.min(lim, oldFrom.stock[g]+r.cargo[g]);
+  }
+  r.cargo={};
+  r.from=fromId; r.to=toId;
+  if(isOwned(toId) && r.mode!=="sell"){
+    r.mode="sell";                         // you cannot buy from your own city
+    routeItems(r).forEach(i=>{ i.role="sell"; i.upTo=9999; i.keep=i.keep||0; });
+  }
+  r.phase="load"; r.status="loading"; r.legLeft=0; r.legTotal=0;
+  const nt=isOwned(toId)?cityById(toId):G.world[toId];
+  log(`The ${oldFrom?oldFrom.name:"?"} run is redirected${oldTo?` from ${oldTo.name}`:""} to <b>${nt?nt.name:"?"}</b>.`);
+  return true;
+}
+
+function assignShip(shipId, routeId){
+  const sh=G.ships.find(x=>x.id===shipId); if(!sh) return;
+  const from=shipRoute(sh);
+  if(from){
+    if(!routeInPort(from)) return;
+    from.ships=from.ships.filter(x=>x!==shipId);
+  }
+  if(routeId==null) return;
+  const to=G.routes.find(r=>r.id===routeId);
+  if(!to || to.land || !routeInPort(to)) return;
+  if(!to.ships.includes(shipId)) to.ships.push(shipId);
+}
+function routeEscort(r){ return routeShips(r).filter(s=>SHIPCLS[s.cls].war).length; }
+
+
+
+/* ---------------- the open market ----------------
+   Foreign traders put in at your harbours of their own accord. Some pay well
+   above the usual for what you have; some are trying it on. Judging which is
+   which is the point, so offers are deliberately not all worth taking. */
+const VISITOR_HOMES=["Alashiya","Arzawa","Tarshish","Ahhiyawa","Karkemish","Punt",
+  "Kaptara","the Sea Peoples","Nubia","Hatti","Magan","Sherden traders","Danuna",
+  "Lukka mariners","Amurru","Elishah"];
+
+function marketAnchor(good){
+  const ports=Object.values(G.world);
+  if(!ports.length) return BASE_PRICE[good];
+  const avg=ports.reduce((a,w)=>a+w.price[good],0)/ports.length;
+  return (avg+BASE_PRICE[good])/2;
+}
+function cityRenown(c){ return c.renown===undefined?0:c.renown; }
+
+function visitorTick(){
+  G.visitors=G.visitors||[];
+  for(let i=G.visitors.length-1;i>=0;i--){
+    const v=G.visitors[i];
+    v.left--;
+    if(v.left<=0) G.visitors.splice(i,1);
+  }
+  G.cities.forEach(c=>{
+    c.renown=Math.max(0,(c.renown||0)-0.0015);      // goodwill fades
+  });
+  // a harbour draws callers; a merchant quarter draws far more
+  const hosts=G.cities.filter(c=>hasBld(c,"harbour"));
+  if(!hosts.length || G.visitors.length>14) return;
+  hosts.forEach(c=>{
+    let odds=0.026*(0.5+c.pop/22);
+    if(hasBld(c,"quarter")) odds*=2.1;
+    odds*=1+cityRenown(c);
+    if(Math.random()>odds) return;
+    const v=makeOffer(c);
+    if(v) G.visitors.push(v);
+  });
+}
+
+function makeOffer(c){
+  const wantsToBuy=Math.random()<0.5;
+  let good;
+  if(wantsToBuy){
+    // they ask after what you actually have; otherwise the offer is idle talk
+    const held=TRADEABLE.filter(g=>c.stock[g]>12);
+    if(!held.length) return null;
+    good=held[Math.floor(Math.random()*held.length)];
+  }else{
+    // they offer what you are short of — sometimes including tin
+    const lean=TRADEABLE.filter(g=>c.stock[g]<40);
+    good=(lean.length&&Math.random()<0.8) ? lean[Math.floor(Math.random()*lean.length)]
+         : TRADEABLE[Math.floor(Math.random()*TRADEABLE.length)];
+  }
+  const anchor=marketAnchor(good);
+  // a spread wide enough that some callers are worth turning away
+  const mult = wantsToBuy ? 0.85+Math.random()*0.95     // 0.85x .. 1.80x
+                          : 0.55+Math.random()*0.95;    // 0.55x .. 1.50x
+  const price=+(anchor*mult).toFixed(2);
+  const qty=Math.round((15+Math.random()*70)*(0.6+c.pop/26));
+  return {id:G.nextVisitor++, city:c.id, kind:wantsToBuy?"buy":"sell", good,
+          qty, price, anchor:+anchor.toFixed(2),
+          from:VISITOR_HOMES[Math.floor(Math.random()*VISITOR_HOMES.length)],
+          left:3+Math.floor(Math.random()*8), total:0};
+}
+
+/* how good the terms are, against what the good is generally worth */
+function offerRating(v){
+  const ratio = v.kind==="buy" ? v.price/v.anchor : v.anchor/v.price;
+  if(ratio>=1.35) return {word:"generous", col:"var(--verdigris)"};
+  if(ratio>=1.08) return {word:"fair",     col:"var(--tin)"};
+  if(ratio>=0.92) return {word:"even",     col:"var(--tin)"};
+  return {word:"poor", col:"var(--rust)"};
+}
+
+function acceptOffer(id){
+  const v=(G.visitors||[]).find(x=>x.id===id);
+  if(!v) return;
+  const c=cityById(v.city);
+  if(!c) return;
+  let qty=0;
+  if(v.kind==="buy"){
+    qty=Math.min(v.qty, Math.floor(c.stock[v.good]));
+    if(qty<1) return;
+    c.stock[v.good]-=qty;
+    G.silver+=qty*v.price;
+    G.volYear=(G.volYear||0)+qty;
+    log(`Sold ${qty} ${GOOD_NAME[v.good].toLowerCase()} to a trader from ${v.from} at <b>${c.name}</b> for ${(qty*v.price)|0} silver.`);
+  }else{
+    const room=Math.max(0, storeCap(c)-c.stock[v.good]);
+    qty=Math.min(v.qty, Math.floor(G.silver/Math.max(v.price,.01)), Math.floor(room));
+    if(qty<1) return;
+    G.silver-=qty*v.price;
+    c.stock[v.good]+=qty;
+    G.volYear=(G.volYear||0)+qty;
+    log(`Bought ${qty} ${GOOD_NAME[v.good].toLowerCase()} from ${v.from} at <b>${c.name}</b> for ${(qty*v.price)|0} silver.`);
+  }
+  c.renown=Math.min(1.5,(c.renown||0)+0.05);        // word gets about
+  G.visitors=G.visitors.filter(x=>x.id!==id);
+}
+
+
+/* ---------------- pulling things down ----------------
+   A refund of part of the materials, and the plot and hands back. Guarded so
+   you cannot strand a shipyard by demolishing its harbour, or clear ground out
+   from under buildings standing on it. */
+function demolishBlocked(c,id){
+  const B=BLD[id];
+  if(!c.buildings.includes(id)) return "not built here";
+  const last = countBld(c,id)===1;
+  if(last){
+    const dependant=c.buildings.find(b=>BLD[b].req===id);
+    if(dependant) return `the ${BLD[dependant].name.toLowerCase()} needs it`;
+  }
+  if(B.addSlots){
+    // would the remaining plots still hold everything standing?
+    if(totalSlots(c)-B.addSlots < plotsUsed(c)-(B.noPlot?0:1)) return "too much built on it";
+  }
+  if(B.addDep){
+    for(const k in B.addDep){
+      const used=c.buildings.filter(b=>BLD[b].dep===k).length;
+      const total=(c.dep[k]||0)+c.buildings.reduce((a,b)=>a+((BLD[b].addDep&&BLD[b].addDep[k])||0),0);
+      if(total-B.addDep[k] < used) return "the ground is in use";
+    }
+  }
+  return null;
+}
+function demolish(c,id){
+  if(demolishBlocked(c,id)) return;
+  const B=BLD[id];
+  const ix=c.buildings.indexOf(id);
+  c.buildings.splice(ix,1);
+  // a third of the materials come back; the rest is rubble
+  G.silver += Math.round(B.cost.silver*0.33);
+  c.stock.timber = Math.min(storeCap(c), c.stock.timber + Math.round(B.cost.timber*0.33));
+  if(!c.buildings.includes(id)) delete c.throttle[id];
+  log(`The ${B.name.toLowerCase()} at <b>${c.name}</b> is pulled down.`);
+}
+
+
+/* ---------------- ruin ----------------
+   A house can end. Cities that cannot feed themselves empty out, and when the
+   last one is gone there is nothing left to rule. Rival houses go the same
+   way, and their coasts fall vacant for whoever is still standing. */
+function hillfortShield(c){ return hasTech("hillforts") ? 0.45 : 1; }
+
+function ruinCheck(){
+  // your own cities
+  for(let i=G.cities.length-1;i>=0;i--){
+    const c=G.cities[i];
+    if(c.pop<=0.7){
+      log(`<b>${c.name}</b> is abandoned. The last of them have gone.`);
+      G.cities.splice(i,1);
+      if(G.sel===c.id) G.sel=G.cities[0]?G.cities[0].id:null;
+    }
+  }
+  if(!G.cities.length && !G.over){
+    G.over=true; G.running=false;
+    log(`<b>Your house is ended.</b> Nothing remains of it but the name.`);
+  }
+
+  // rival houses
+  if(!G.rivals) return;
+  for(let i=G.rivals.length-1;i>=0;i--){
+    const r=G.rivals[i];
+    r.distress = r.silver<60 ? (r.distress||0)+1 : Math.max(0,(r.distress||0)-0.25);
+    if(r.distress>WPY*6 && r.cities.length){          // six lean years and a colony goes
+      const lost=r.cities.pop();
+      r.distress=0;
+      log(`<b>${r.name}</b> abandons ${siteById(lost).name}.`);
+    } else if(r.distress>WPY*10 && !r.cities.length){ // ten with nothing left
+      log(`<b>${r.name}</b> is finished. Its factors have scattered.`);
+      G.rivals.splice(i,1);
+    }
+  }
+}
+
+/* =================== economy tick =================== */
+/* Harvest conditions come from whatever weather is currently in play, not from
+   the date. Terraces and canals only soften a bad spell — they cannot make one
+   not happen. */
+function droughtFactor(c){
+  const raw=evMul("grainMul");
+  if(raw>=1) return raw;                       // good years need no mitigation
+  let mit=1;
+  c.buildings.forEach(b=>{ if(BLD[b].drought) mit=Math.min(mit,BLD[b].drought); });
+  if(hasTech("canals")) mit*=0.65;
+  if(hasTech("shaduf")) mit*=0.7;
+  const shortfall=(1-raw)*mit;                 // mitigation cuts the shortfall
+  return Math.max(.25, 1-shortfall);
+}
+
+function cityTick(c){
+  const cap=storeCap(c);
+  const dro=droughtFactor(c);
+
+  /* Woodland. Every timber camp eats into the standing forest; a site with
+     little woodland to begin with is stripped fastest. Nurseries push it back,
+     but far more slowly than axes take it down — which is the whole problem. */
+  if((c.dep.forest||0)>0){
+    const camps=countBld(c,"timberyard");
+    const spread=Math.max(1,c.dep.forest);            // more woodland, slower to exhaust
+    const cut=camps*0.00090*RATE/spread;
+    const wild=0.00020*RATE;                                // natural seeding
+    const sown=c.buildings.reduce((a,b)=>a+(BLD[b].replant||0),0)*RATE;
+    c.forest=Math.max(0.04, Math.min(1, c.forest - cut + wild + sown));
+  }
+
+  /* Production runs in tier order so a full chain can complete in one month:
+     ore and timber are raised, timber becomes charcoal, charcoal smelts the ore,
+     metal reaches the forge. Every stage is limited by what the stage before it
+     actually delivered. */
+  c.starved={};
+  const chain=[...c.buildings].sort((a,b)=>(BLD[a].tier||0)-(BLD[b].tier||0));
+  chain.forEach(id=>{
+    const B=BLD[id];
+    if(!B.out && !B.in) return;
+
+    // how much of this building can actually run
+    let ratio=1, short=null;
+    if(B.in){
+      for(const g in B.in){
+        // a reserve is stock the works may not touch — this is how you stop the
+        // charcoal kilns burning the timber you were saving for hulls
+        const usable=Math.max(0, c.stock[g]-(c.reserve[g]||0));
+        const cover=usable/(B.in[g]*RATE);
+        if(cover<ratio){ ratio=cover; short=g; }
+      }
+      ratio=Math.max(0,Math.min(1,ratio));
+      if(ratio<0.999 && short) c.starved[id]=short;
+      if(ratio<=0.001) return;
+    }
+    const thr = c.throttle[id]===undefined ? 1 : c.throttle[id];
+    if(thr<=0){ c.throttled=true; return; }
+    ratio*=thr;
+
+    // research and season modifiers
+    let boost=1;
+    if(id==="farm"||id==="terrace"){
+      boost*=dro;
+      if(hasTech("ard")) boost*=1.28;
+      if(hasTech("ploughshare")) boost*=1.3;
+      if(hasTech("rotation")) boost*=1.22;
+    }
+    if(id==="grove") boost*=dro;
+    if(id==="timberyard") boost*=evMul("timberMul")*(0.18+0.82*(c.forest===undefined?1:c.forest));
+    if(id==="coppermine"||id==="ironmine") boost*=evMul("oreMul");
+    if(id==="tinpost") boost*=Math.max(0.05,evMul("tinMul"));
+    if((id==="smelter"||id==="bloomery") && hasTech("bellows")) boost*=1.3;
+    if(id==="kiln" && hasTech("retort")) boost*=1.55;
+    if(B.iron && hasTech("cementation")) boost*=1.4;
+    if(id==="potter" && hasTech("selfsufficiency")) boost*=1.2;
+    if(id==="weaving" && hasTech("selfsufficiency")) boost*=1.2;
+    if(id==="silvermine" && hasTech("cupel")) boost*=1.75;
+    if((id==="press"||id==="dyeworks") && hasTech("press")) boost*=1.4;
+    if(B.iron && hasTech("carburize")) boost*=1.55;
+
+    if(B.in) for(const g in B.in){
+      let need=B.in[g]*RATE*ratio;
+      if(g==="tin" && hasTech("salvage")) need*=0.55;   // broken bronze recast
+      c.stock[g]=Math.max(0,c.stock[g]-need);
+    }
+    if(B.out) for(const g in B.out){
+      const amt=B.out[g]*RATE*ratio*boost;
+      if(g==="silver") G.silver+=amt; else c.stock[g]+=amt;
+    }
+  });
+
+  // eat
+  const food=c.pop*0.26*RATE;
+  const got=Math.min(c.stock.grain,food);
+  c.stock.grain-=got;
+  const fed=got/Math.max(food,.001);
+
+  /* Population. Growth is logistic: fastest with a real granary surplus and
+     plenty of room, tailing off as the place fills. Housing sets the ceiling,
+     so a city that stops building dwellings stops growing whatever it eats. */
+  const drain=evSum("popDrain");
+  if(drain>0) c.pop=Math.max(0.35, c.pop-drain*RATE);
+  const limit=popCap(c);
+  if(fed>=.97){
+    const surplus=Math.min(1, c.stock.grain/Math.max(c.pop*3.2,1));   // months of reserve
+    const room=Math.max(0, 1-c.pop/limit);
+    let rate=0.075*surplus*room*RATE;
+    if(hasBld(c,"cistern")) rate*=1.15;
+    c.pop=Math.min(limit, c.pop+rate);
+    c.unrest=Math.max(0,c.unrest-1);
+  } else if(fed<.78){
+    c.pop=Math.max(0.35,c.pop-0.07*RATE); c.unrest+=1;
+  } else c.unrest=Math.max(0,c.unrest-1);
+
+  // spoilage + storage ceiling
+  let spoilMod=1;
+  c.buildings.forEach(b=>{ if(BLD[b].spoil) spoilMod=Math.min(spoilMod,BLD[b].spoil); });
+  c.stock.grain*=(1-0.016*spoilMod*(hasTech('granaryrite')?0.55:1)*RATE);
+  c.stock.timber*=(1-0.006*RATE);
+  GOODS.forEach(g=>{ if(g!=="silver") c.stock[g]=Math.min(cap,Math.max(0,c.stock[g])); });
+
+  // construction
+  if(c.build){
+    c.build.left--;
+    if(c.build.left<=0){
+      c.buildings.push(c.build.id);
+      log(`<b>${BLD[c.build.id].name}</b> finished at ${c.name}.`);
+      c.build=null;
+    }
+  }
+  if(c.ships){
+    c.ships.left--;
+    if(c.ships.left<=0){
+      const sh=makeShip(c.ships.cls||"coaster", c.id);
+      G.ships.push(sh);
+      log(`<b>${sh.name}</b>, a ${SHIPCLS[sh.cls].name.toLowerCase()}, is launched at ${c.name}.`);
+      c.ships=null;
+    }
+  }
+}
+
+/* foreign prices drift; tin gets dearer as the roads fray */
+function worldTick(){
+  G.tinFlow = Math.max(0.05, Math.min(2.2, evMul("tinMul")));
+  for(const id in G.world){
+    const w=G.world[id];
+    GOODS.forEach(g=>{
+      const base=BASE_PRICE[g]*(g==="tin" ? (1/Math.max(G.tinFlow,.12)) : 1)*evMul("demandMul");
+      const drift=(Math.random()-0.5)*0.06*base;
+      w.price[g]=Math.max(base*0.35, Math.min(base*4.2, w.price[g]*0.985 + base*0.015 + drift));
+    });
+  }
+}
+
+/* A route carries a manifest, not a single good.
+   Selling: each entry has a floor — stock to keep at home, so a standing order
+   cannot strip a city of the timber or grain it needs.
+   Buying: each entry has a ceiling — buy only up to that much on hand, so a
+   route stops on its own once the warehouse is full. */
+function routeItems(r){
+  if(r.items){
+    // older manifests carried no direction; infer it from the route's purpose
+    r.items.forEach(i=>{ if(!i.role) i.role = r.mode==="buy" ? "buy" : "sell"; });
+    return r.items;
+  }
+  r.items=[{good:r.good||"grain", keep:0, upTo:9999, role:(r.mode==="buy"?"buy":"sell")}];
+  return r.items;
+}
+const sellItems = r => routeItems(r).filter(i=>i.role!=="buy");
+const buyItems  = r => routeItems(r).filter(i=>i.role==="buy");
+const routeSells = r => r.mode==="sell" || r.mode==="both";
+const routeBuys  = r => r.mode==="buy"  || r.mode==="both";
+
+function manifestSummary(r){
+  const out=[];
+  if(routeSells(r)){
+    const t=sellItems(r).map(i=>GOOD_NAME[i.good].toLowerCase()+(i.keep>0?` (keep ${i.keep})`:""));
+    if(t.length) out.push((r.mode==="both"?"out: ":"")+t.join(", "));
+  }
+  if(routeBuys(r)){
+    const t=buyItems(r).map(i=>GOOD_NAME[i.good].toLowerCase()+` (to ${i.upTo})`);
+    if(t.length) out.push((r.mode==="both"?"home: ":"")+t.join(", "));
+  }
+  return out.join(" · ");
+}
+function cargoTotal(c){ return Object.values(c||{}).reduce((a,b)=>a+b,0); }
+
+/* One pass of a route. A round trip does both halves in the same call at the
+   far port: the hold is emptied by selling, which is exactly what makes room
+   for the return cargo. */
+function routeTick(){
+  G.routes.forEach(r=>{
+    if(!r.land && !r.ships.length){ r.status="no ships assigned"; return; }
+    const home=cityById(r.from);
+    const toOwned=isOwned(r.to);
+    const far= toOwned? cityById(r.to) : G.world[r.to];
+    if(!home||!far){ r.status="broken"; return; }
+    const cap = r.land ? caravanCap(home) : routeCap(r);
+    if(r.land && cap<1){ r.status="no caravanserai"; return; }
+    r.cargo=r.cargo||{};
+    const legOut = ()=> r.land? landMonths(home,far) : legMonths(home,far,G.t,routeSpeed(r));
+    const legBack= ()=> r.land? landMonths(far,home) : legMonths(far,home,G.t,routeSpeed(r));
+
+    /* ---------- in port at home: load whatever goes out ---------- */
+    if(r.phase==="load"){
+      r.cargo={};
+      let loaded=0;
+      if(routeSells(r)){
+        const items=sellItems(r);
+        const spare=items.map(i=>Math.max(0, home.stock[i.good]-(i.keep||0)));
+        const total=spare.reduce((a,b)=>a+b,0);
+        const scale = total>cap ? cap/total : 1;
+        items.forEach((it,ix)=>{
+          const take=Math.floor(spare[ix]*scale);
+          if(take<1) return;
+          home.stock[it.good]-=take;
+          r.cargo[it.good]=take;
+          loaded+=take;
+        });
+      }
+      const wantBuy = routeBuys(r)
+        ? buyItems(r).reduce((a,i)=>a+Math.max(0,i.upTo-home.stock[i.good]),0) : 0;
+      if(loaded<1 && wantBuy<1){
+        r.status = routeBuys(r)&&!routeSells(r) ? "stores are full" : "waiting for cargo";
+        return;
+      }
+      if(loaded<1 && routeSells(r) && !routeBuys(r)){ r.status="waiting for cargo"; return; }
+      r.legLeft=legOut(); r.legTotal=r.legLeft;
+      r.phase="out";
+      r.status = loaded<1 ? "sailing out empty" : (r.land?"on the road":"outbound");
+      return;
+    }
+
+    /* ---------- the passage out ---------- */
+    if(r.phase==="out"){
+      r.legLeft--;
+      if(!r.land){
+        const guards=routeEscort(r);
+        let risk=evSum("piracy")*(guards?0.25/guards:1);
+        if(hasTech("convoy")) risk*=0.45;
+        if(risk>0 && cargoTotal(r.cargo)>0 && Math.random()<risk){
+          if(guards) log(`Raiders are driven off the ${far.name} run.`);
+          else{
+            log(`Raiders take the cargo bound for <b>${far.name}</b>.`);
+            r.cargo={};
+            if(Math.random()<0.22 && r.ships.length){
+              const lost=r.ships[Math.floor(Math.random()*r.ships.length)];
+              const sh=G.ships.find(x=>x.id===lost);
+              if(sh){
+                log(`<b>${sh.name}</b> is lost to raiders.`);
+                G.ships=G.ships.filter(x=>x.id!==lost);
+                r.ships=r.ships.filter(x=>x!==lost);
+              }
+            }
+          }
+        }
+        r.status = isEtesian(G.t)&&far.lon<home.lon-1.5 ? "beating against the wind"
+                 : (r.status==="sailing out empty"?"sailing out empty":"outbound");
+      }
+      if(r.legLeft>0) return;
+
+      /* --- arrived. Sell first, then buy with the room that makes. --- */
+      if(routeSells(r) && cargoTotal(r.cargo)>0){
+        if(toOwned){
+          const lim=storeCap(far);
+          for(const g in r.cargo) far.stock[g]=Math.min(lim, far.stock[g]+r.cargo[g]);
+          log(`${cargoTotal(r.cargo)|0} of cargo delivered to <b>${far.name}</b>.`);
+        }else{
+          let bonus=1;
+          if(hasBld(home,"quarter")) bonus+=BLD.quarter.trade;
+          if(hasTech("weights")) bonus+=0.15;
+          if(hasTech("coinage")) bonus+=0.12;
+          let gross=0;
+          for(const g in r.cargo){
+            const q=r.cargo[g];
+            const {paid,left}=applyContracts(r.to,g,q);
+            gross+=paid;
+            if(left>0){
+              gross+=left*far.price[g]*bonus;
+              far.price[g]*=Math.max(0.72,1-left/420);
+            }
+            G.volYear=(G.volYear||0)+q;
+          }
+          if(gross>0){
+            G.silver+=gross; r.lastSale=gross;
+            log(`Sold ${cargoTotal(r.cargo)|0} of cargo at <b>${far.name}</b> for ${gross|0} silver.`);
+          }
+        }
+      }
+      r.cargo={};
+
+      if(routeBuys(r) && !toOwned){
+        const cap0=Math.max(0,(G.silver-60)*0.45);
+        let purse=Math.min(cap0, r.budget||cap0);
+        let room=cap, spent=0;
+        for(const it of buyItems(r)){
+          const need=Math.max(0, it.upTo-home.stock[it.good]);
+          if(need<1||room<1||purse<1) continue;
+          const price=far.price[it.good];
+          const qty=Math.floor(Math.min(need, room, purse/Math.max(price,.01)));
+          if(qty<1) continue;
+          const cost=qty*price;
+          G.silver-=cost; purse-=cost; spent+=cost; room-=qty;
+          r.cargo[it.good]=(r.cargo[it.good]||0)+qty;
+          far.price[it.good]*=Math.min(1.35,1+qty/500);
+        }
+        if(spent>0){
+          r.lastCost=spent;
+          log(`Bought ${cargoTotal(r.cargo)|0} of goods at <b>${far.name}</b> for ${spent|0} silver.`);
+        }
+      }
+
+      r.legLeft=legBack(); r.legTotal=r.legLeft;
+      r.phase="back";
+      r.status = cargoTotal(r.cargo)>0 ? "homeward, laden" : "returning";
+      return;
+    }
+
+    /* ---------- the passage home ---------- */
+    if(r.phase==="back"){
+      r.legLeft--;
+      if(r.legLeft<=0){
+        if(cargoTotal(r.cargo)>0){
+          const lim=storeCap(home);
+          for(const g in r.cargo) home.stock[g]=Math.min(lim, home.stock[g]+r.cargo[g]);
+        }
+        r.cargo={}; r.phase="load"; r.status="in port";
+      }
+    }
+  });
+}
+
+function tick(){
+  if(G.over) return;
+  G.t++;
+  G.year=Math.floor(G.t/WPY);
+  rollEvents();
+  researchTick();
+  rivalTick();
+  rivalTradeTick();
+  rivalContractTick();
+  contractTick();
+  visitorTick();
+  // hulls wear only while working
+  G.routes.forEach(r=>{
+    if(r.phase==="out"||r.phase==="back")
+      routeShips(r).forEach(sh=>{
+        sh.wear=Math.min(1,sh.wear+shipWearRate(sh));
+        if(sh.wear>=1 && !sh.condemned){
+          sh.condemned=true;
+          log(`<b>${sh.name}</b> is worn past use and must be refitted.`);
+        }
+      });
+  });
+  G.cities.forEach(cityTick);
+  expeditionTick();
+  ruinCheck();
+  worldTick();
+  routeTick();
+  if(G.t%WPY===0){
+    const pop=G.cities.reduce((a,c)=>a+c.pop,0);
+    G.history=G.history||[];
+    G.history.push({y:G.year, pop:+pop.toFixed(1), silver:Math.round(G.silver),
+                    vol:Math.round(G.volYear||0), cities:G.cities.length});
+    if(G.history.length>900) G.history.shift();
+    G.volYear=0;
+  }
+  if(OPTS.autosave>0 && G.t%WPY===0 && G.year>0 && G.year%OPTS.autosave===0) saveTo(lastSlot);
+}
+
+/* =================== map =================== */
+const cv=document.getElementById("map"), ctx=cv.getContext("2d"), stage=document.getElementById("stage");
+let W=0,H=0;
+/* Camera. The old code stretched a fixed lon/lat box to fill the canvas, so a
+   short wide viewport squashed the whole sea. This keeps proportions honest at
+   any screen shape and lets you pan and zoom. */
+const KX=Math.cos(36.5*Math.PI/180);        // degrees of longitude are shorter here
+const cam={cx:14.5, cy:36.2, scale:12, touched:false};
+
+function fitCam(){
+  const lonSpan=55, latSpan=14.5;
+  cam.scale=Math.min(W/(lonSpan*KX), H/latSpan);
+  cam.cx=14.5; cam.cy=36.2;
+}
+const px=lon=>(lon-cam.cx)*cam.scale*KX + W/2;
+const py=lat=>H/2 - (lat-cam.cy)*cam.scale;
+const toLon=x=>(x-W/2)/(cam.scale*KX)+cam.cx;
+const toLat=y=>cam.cy-(y-H/2)/cam.scale;
+function zoomAt(factor,ax,ay){
+  const lon=toLon(ax), lat=toLat(ay);
+  cam.scale=Math.max(4,Math.min(160,cam.scale*factor));
+  cam.touched=true;
+  cam.cx=lon-(ax-W/2)/(cam.scale*KX);
+  cam.cy=lat+(ay-H/2)/cam.scale;
+  draw();
+}
+
+function resize(){
+  const d=Math.min(2,window.devicePixelRatio||1);
+  W=stage.clientWidth; H=stage.clientHeight;
+  cv.width=W*d; cv.height=H*d; ctx.setTransform(d,0,0,d,0,0);
+  if(!cam.touched) fitCam();
+}
+window.addEventListener("resize",()=>{resize();draw();});
+
+
+/* ---------------- icons ----------------
+   Drawn rather than rotated to a heading: a sail flipped upside down reads as
+   nothing at all. They mirror east/west and stay upright, which is legible at
+   the six or seven pixels these actually occupy. */
+function drawBoat(x,y,dir,hull,sail,sc){
+  ctx.save();
+  ctx.translate(x,y); ctx.scale(dir<0?-sc:sc, sc);
+  ctx.fillStyle=hull; ctx.strokeStyle=hull; ctx.lineWidth=1.3;
+  ctx.beginPath();                                   // hull, deep enough to read small
+  ctx.moveTo(-6,-1.2); ctx.quadraticCurveTo(0,5.0,6,-1.2);
+  ctx.quadraticCurveTo(0,1.4,-6,-1.2); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(5.6,-1.0); ctx.lineTo(7.2,-3.2); ctx.stroke();   // stem post
+  ctx.beginPath(); ctx.moveTo(0,-1.0); ctx.lineTo(0,-7.0); ctx.stroke();       // mast
+  ctx.fillStyle=sail;                                // square sail on its yard
+  ctx.beginPath();
+  ctx.moveTo(-3.2,-6.6); ctx.lineTo(3.2,-6.6); ctx.lineTo(2.4,-2.4); ctx.lineTo(-2.4,-2.4);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function drawGalley(x,y,dir,col,sc){
+  ctx.save();
+  ctx.translate(x,y); ctx.scale(dir<0?-sc:sc, sc);
+  ctx.fillStyle=col; ctx.strokeStyle=col; ctx.lineWidth=1.25;
+  ctx.beginPath();
+  ctx.moveTo(-6.4,-1.4); ctx.quadraticCurveTo(0,4.2,6.4,-1.4);
+  ctx.quadraticCurveTo(0,0.9,-6.4,-1.4); ctx.closePath(); ctx.fill();
+  [-3.2,0,3.2].forEach(i=>{                          // few, heavy oars
+    ctx.beginPath(); ctx.moveTo(i,0.8); ctx.lineTo(i-1.6,3.4); ctx.stroke();
+  });
+  ctx.beginPath(); ctx.moveTo(6.2,-1.2); ctx.lineTo(8.6,-2.2); ctx.stroke();   // ram
+  ctx.beginPath(); ctx.moveTo(0,-1.2); ctx.lineTo(0,-5.2); ctx.stroke();       // stumpy mast
+  ctx.restore();
+}
+/* A two-wheeled cart. Tried a pack animal first: at seven pixels it was an
+   unreadable blob, and too close to a hull. Wheels are unmistakable. */
+function drawCaravan(x,y,dir,col,sc){
+  ctx.save();
+  ctx.translate(x,y); ctx.scale(dir<0?-sc:sc, sc);
+  ctx.fillStyle=col; ctx.strokeStyle=col; ctx.lineWidth=1.4;
+  ctx.fillRect(-4.2,-4.4,7.6,3.8);                   // the load
+  ctx.beginPath(); ctx.moveTo(3.4,-1.6); ctx.lineTo(7.4,-2.8); ctx.stroke();   // shaft
+  // rings, not filled discs with holes punched through — compositing would
+  // cut straight through the sea to the page beneath
+  ctx.lineWidth=1.5;
+  [[-2.4,1.6],[1.8,1.6]].forEach(([wx,wy])=>{
+    ctx.beginPath(); ctx.arc(wx,wy,1.7,0,7); ctx.stroke();
+  });
+  ctx.restore();
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,"#0d2637"); g.addColorStop(1,"#081722");
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+  // landmasses
+  LAND.forEach(poly=>{
+    ctx.beginPath();
+    poly.forEach(([lon,lat],i)=>{ const x=px(lon),y=py(lat); i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+    ctx.closePath();
+    ctx.fillStyle="#20291F";                 // dry ground against a cold sea
+    ctx.fill();
+    ctx.strokeStyle="rgba(159,178,188,.30)"; // surf line
+    ctx.lineWidth=1;
+    ctx.stroke();
+  });
+
+  // graticule, drawn over the land so the chart still reads as a chart
+  ctx.strokeStyle="rgba(159,178,188,.05)"; ctx.lineWidth=1;
+  for(let lon=-10;lon<=40;lon+=5){ctx.beginPath();ctx.moveTo(px(lon),0);ctx.lineTo(px(lon),H);ctx.stroke();}
+  for(let lat=30;lat<=42;lat+=3){ctx.beginPath();ctx.moveTo(0,py(lat));ctx.lineTo(W,py(lat));ctx.stroke();}
+
+  if(!G) return;
+
+  // routes
+  if(OPTS.showRoutes) G.routes.forEach(r=>{
+    const a=cityById(r.from), b=isOwned(r.to)?cityById(r.to):G.world[r.to];
+    if(!a||!b) return;
+    ctx.strokeStyle="rgba(154,107,174,.34)"; ctx.lineWidth=1.3; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(px(a.lon),py(a.lat)); ctx.lineTo(px(b.lon),py(b.lat)); ctx.stroke();
+    ctx.setLineDash([]);
+    if(r.phase==="out"||r.phase==="back"){
+      const p=1-(r.legLeft/Math.max(r.legTotal,1));
+      const f=r.phase==="out"?p:1-p;
+      const x=px(a.lon)+(px(b.lon)-px(a.lon))*f, y=py(a.lat)+(py(b.lat)-py(a.lat))*f;
+      // heading: outbound points at the destination, homeward back again
+      const dir=(r.phase==="out" ? (b.lon-a.lon) : (a.lon-b.lon)) >= 0 ? 1 : -1;
+      const sc=Math.max(0.75, Math.min(1.5, cam.scale/16));
+      if(r.land) drawCaravan(x,y,dir,"#C9A227",sc);
+      else if(routeEscort(r)) drawGalley(x,y,dir,"#9A6BAE",sc);
+      else drawBoat(x,y,dir,"#7A4E8C","#C3A6D2",sc);
+    }
+  });
+
+  // a coast being looked over right now
+  if(G && G.survey && !G.survey.bad){
+    const sx=px(G.survey.lon), sy=py(G.survey.lat);
+    ctx.strokeStyle="#C9A227"; ctx.lineWidth=1.5; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.arc(sx,sy,8,0,7); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle="#C9A227"; ctx.beginPath(); ctx.arc(sx,sy,2.5,0,7); ctx.fill();
+  }
+
+  // expeditions under way
+  (G.expeditions||[]).forEach(x=>{
+    const a=cityById(x.from), b=siteById(x.to);
+    if(!a||!b) return;
+    const f=1-(x.legLeft/Math.max(x.legTotal,1));
+    ctx.strokeStyle="rgba(201,162,39,.35)"; ctx.lineWidth=1.2; ctx.setLineDash([2,5]);
+    ctx.beginPath(); ctx.moveTo(px(a.lon),py(a.lat)); ctx.lineTo(px(b.lon),py(b.lat)); ctx.stroke();
+    ctx.setLineDash([]);
+    const ex=px(a.lon)+(px(b.lon)-px(a.lon))*f, ey=py(a.lat)+(py(b.lat)-py(a.lat))*f;
+    const edir=(b.lon-a.lon)>=0?1:-1;
+    drawBoat(ex,ey,edir,"#B08A1F","#E8D18A",Math.max(0.8,Math.min(1.6,cam.scale/15)));
+  });
+
+  allSites().forEach(s=>{
+    const x=px(s.lon), y=py(s.lat);
+    const own=isOwned(s.id);
+    const c=own?cityById(s.id):null;
+    const r = own ? Math.max(5,5+Math.min(9,c.pop*0.42)) : (s.empty?4:5);
+
+    const riv = rivalOwns(s.id) ? rivalOf(s.id) : null;
+    if(riv){
+      ctx.fillStyle=riv.colour;
+      ctx.beginPath(); ctx.arc(x,y,4.6,0,7); ctx.fill();
+      ctx.fillStyle="rgba(228,222,208,.6)";
+      ctx.font='10.5px ui-sans-serif,system-ui,sans-serif';
+      if(cam.scale>13) ctx.fillText(s.name,x+8,y+3.5);
+      return;
+    }
+    if(s.empty && !own){
+      ctx.strokeStyle = s.surveyed ? "rgba(201,162,39,.75)" : "rgba(159,178,188,.42)";
+      ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.stroke();
+    } else {
+      ctx.fillStyle = own ? "#4FA88B" : "#7E93A1";
+      ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill();
+    }
+    if(own && hasBld(c,"harbour")){
+      ctx.strokeStyle="#C9A227"; ctx.lineWidth=1.4;
+      ctx.beginPath(); ctx.arc(x,y,r+3.4,0,7); ctx.stroke();
+    }
+    if(G.sel===s.id){
+      ctx.strokeStyle="#E4DED0"; ctx.lineWidth=1.6;
+      ctx.beginPath(); ctx.arc(x,y,r+6.5,0,7); ctx.stroke();
+    }
+    // zoomed out on a phone every label collides, so show only what matters
+    const showLabel = OPTS.labels==="own" ? own
+                    : OPTS.labels==="all" ? true
+                    : (own || G.sel===s.id || cam.scale>13);
+    if(showLabel){
+      ctx.fillStyle= own?"rgba(228,222,208,.94)":"rgba(228,222,208,.55)";
+      ctx.font=(cam.scale>13?11:10.5)+'px ui-sans-serif,system-ui,sans-serif';
+      ctx.fillText(s.name,x+r+5,y+3.5);
+    }
+  });
+}
+
+/* =================== interaction =================== */
+const tip=document.getElementById("tip");
+function siteAt(mx,my){
+  let hit=null;
+  const grab = window.matchMedia("(pointer:coarse)").matches ? 26 : 15;  // fingers are blunt
+  allSites().forEach(s=>{
+    const d=Math.hypot(px(s.lon)-mx,py(s.lat)-my);
+    if(d<grab&&(!hit||d<hit.d)) hit={s,d};
+  });
+  return hit&&hit.s;
+}
+function tipFor(s){
+  const own=isOwned(s.id), c=own?cityById(s.id):null, w=G.world[s.id];
+  let rows=[];
+  if(own) rows=[["People",c.pop.toFixed(1)],["Hands free",workersFree(c)],
+                ["Buildings",c.buildings.length],["Grain",c.stock.grain.toFixed(0)]];
+  else if(s.empty) rows=[["Unsettled","—"],["Land",Object.entries(s.dep).map(([k,v])=>k+" "+v).join(", ")]];
+  else if(w) rows=[["Copper",w.price.copper.toFixed(1)],["Tin",w.price.tin.toFixed(1)],
+                   ["Grain",w.price.grain.toFixed(1)],["Bronze",w.price.bronze.toFixed(1)]];
+  return `<h4>${s.name}</h4>`+rows.map(x=>`<div class="r"><span>${x[0]}</span><span>${x[1]}</span></div>`).join("");
+}
+
+/* --- pointer: drag to pan, wheel or pinch to zoom, tap to select --- */
+let drag=null, moved=0, pinch=null;
+
+stage.addEventListener("pointerdown",e=>{
+  if(e.pointerType==="touch" && pinch) return;
+  stage.setPointerCapture(e.pointerId);
+  const r=stage.getBoundingClientRect();
+  drag={x:e.clientX-r.left, y:e.clientY-r.top, cx:cam.cx, cy:cam.cy};
+  moved=0;
+});
+stage.addEventListener("pointermove",e=>{
+  const r=stage.getBoundingClientRect();
+  const mx=e.clientX-r.left, my=e.clientY-r.top;
+  if(drag){
+    const dx=mx-drag.x, dy=my-drag.y;
+    moved=Math.max(moved,Math.hypot(dx,dy));
+    if(moved>4){
+      cam.cx=drag.cx-dx/(cam.scale*KX);
+      cam.cy=drag.cy+dy/cam.scale;
+      cam.touched=true;
+      tip.style.opacity=0;
+      draw();
+    }
+    return;
+  }
+  if(e.pointerType!=="mouse") return;           // no hover on touch
+  const s=siteAt(mx,my);
+  if(!s){tip.style.opacity=0;return;}
+  tip.innerHTML=tipFor(s);
+  tip.style.opacity=1;
+  tip.style.left=Math.min(W-240,mx+14)+"px";
+  tip.style.top=Math.min(H-120,my+12)+"px";
+});
+function endDrag(e){
+  if(!drag) return;
+  const r=stage.getBoundingClientRect();
+  const mx=e.clientX-r.left, my=e.clientY-r.top;
+  const wasTap = moved<=4;
+  drag=null;
+  if(!wasTap) return;
+  const s=siteAt(mx,my);
+  if(!s){
+    // nothing there — see whether this stretch of coast could hold a settlement
+    const res=surveyAt(toLon(mx), toLat(my));
+    G.survey = res.ok ? res.site : {bad:res.why};
+    G.sel = res.ok ? null : G.sel;
+    if(window.matchMedia("(max-width:860px)").matches) setMobile("build");
+    render();
+    return;
+  }
+  if(s){
+    G.survey=null;
+    G.sel=s.id;
+    // on a phone the panel is below the fold, so jump to the right section
+    if(window.matchMedia("(max-width:860px)").matches){
+      setMobile(isOwned(s.id)||siteById(s.id).empty ? "build" : "build");
+    }
+    render();
+  }
+}
+stage.addEventListener("pointerup",endDrag);
+stage.addEventListener("pointercancel",()=>{drag=null;});
+stage.addEventListener("mouseleave",()=>{tip.style.opacity=0;});
+
+stage.addEventListener("wheel",e=>{
+  e.preventDefault();
+  const r=stage.getBoundingClientRect();
+  zoomAt(e.deltaY<0?1.12:1/1.12, e.clientX-r.left, e.clientY-r.top);
+},{passive:false});
+
+/* pinch */
+stage.addEventListener("touchstart",e=>{
+  if(e.touches.length===2){
+    drag=null;
+    const [a,b]=e.touches;
+    pinch={d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)};
+  }
+},{passive:true});
+stage.addEventListener("touchmove",e=>{
+  if(e.touches.length===2&&pinch){
+    e.preventDefault();
+    const [a,b]=e.touches;
+    const r=stage.getBoundingClientRect();
+    const d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+    const mx=(a.clientX+b.clientX)/2-r.left, my=(a.clientY+b.clientY)/2-r.top;
+    if(pinch.d>0) zoomAt(d/pinch.d, mx, my);
+    pinch.d=d;
+  }
+},{passive:false});
+stage.addEventListener("touchend",e=>{ if(e.touches.length<2) pinch=null; },{passive:true});
+
+document.getElementById("zin").onclick =()=>zoomAt(1.3,W/2,H/2);
+document.getElementById("zout").onclick=()=>zoomAt(1/1.3,W/2,H/2);
+document.getElementById("zfit").onclick=()=>{cam.touched=false;fitCam();draw();};
+
+/* --- phone section switching --- */
+function setMobile(m){
+  document.body.setAttribute("data-m",m);
+  document.querySelectorAll("#mtabs button").forEach(b=>{
+    b.className = b.getAttribute("data-m")===m ? "on" : "";
+  });
+  if(m!=="empire") setTab(m);
+}
+document.querySelectorAll("#mtabs button").forEach(b=>{
+  b.onclick=()=>setMobile(b.getAttribute("data-m"));
+});
+
+
+/* ---------------- surveying new coasts ----------------
+   Any shore can be settled, not just the named sites. What a stretch of coast
+   offers is read off its position: the ophiolite belts that carry copper, the
+   wet northern slopes that carry timber, the river plains that carry grain.
+   The same coordinates always give the same ground. */
+function pointInPoly(lon,lat,poly){
+  let inside=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+    const [xi,yi]=poly[i], [xj,yj]=poly[j];
+    if(((yi>lat)!==(yj>lat)) && (lon < (xj-xi)*(lat-yi)/((yj-yi)||1e-9)+xi)) inside=!inside;
+  }
+  return inside;
+}
+function onLand(lon,lat){ return LAND.some(poly=>pointInPoly(lon,lat,poly)); }
+function distToCoast(lon,lat){
+  let best=1e9, region=null;
+  LAND.forEach((poly,pi)=>{
+    for(let i=0;i<poly.length;i++){
+      const a=poly[i], b=poly[(i+1)%poly.length];
+      const dx=b[0]-a[0], dy=b[1]-a[1];
+      const L=dx*dx+dy*dy;
+      let t=L? ((lon-a[0])*dx+(lat-a[1])*dy)/L : 0;
+      t=Math.max(0,Math.min(1,t));
+      const d=Math.hypot(lon-(a[0]+t*dx), lat-(a[1]+t*dy));
+      if(d<best){ best=d; region=pi; }
+    }
+  });
+  return {d:best, region};
+}
+/* which landmass a shore belongs to, for overland routes */
+const LAND_REGION=["mainland","africa","sicily","sardinia","corsica","crete","cyprus",
+  "mallorca","ibiza","malta","rhodes","euboea","lesbos","naxos","cephalonia"];
+
+function hashAt(lon,lat,salt){
+  const n=Math.sin((lon+180)*127.1 + (lat+90)*311.7 + salt*74.7)*43758.5453;
+  return n-Math.floor(n);
+}
+function surveyGround(lon,lat){
+  const dep={};
+  const h=(salt)=>hashAt(lon,lat,salt);
+  // grain: river plains and warm lowlands; poor on dry southern shores
+  let fert=1+Math.floor(h(1)*3);
+  if(lat<32.3 && lon>28.5 && lon<33.5) fert+=3;            // the delta
+  if(lat<31 && (lon<25&&lon>10)) fert=Math.max(1,fert-2); // desert coast
+  dep.fertile=Math.min(6,fert);
+  // timber: wetter, higher-latitude and mountainous shores
+  let wood=Math.floor(h(2)*3);
+  if(lat>38.5) wood+=1;
+  if(lon>34 && lat>33 && lat<35.6) wood+=2;            // the cedar coast
+  if(lat<32 && lon>8 && lon<28) wood=Math.max(0,wood-2);
+  if(wood>0) dep.forest=Math.min(5,wood);
+  // copper: the ophiolite and sulphide belts
+  let cu=0;
+  if(lon>32&&lon<34.8&&lat>34.4&&lat<35.8) cu=2+Math.floor(h(3)*3);  // Cyprus
+  else if(lon<-5.5&&lat>36&&lat<38) cu=2+Math.floor(h(3)*2);         // Iberian pyrite belt
+  else if(lon>8&&lon<10&&lat>39&&lat<41.3) cu=1+Math.floor(h(3)*3);  // Sardinia
+  else if(h(3)>0.86) cu=1;
+  if(cu) dep.copper=Math.min(5,cu);
+  // iron: common almost everywhere
+  const fe=h(4);
+  if(fe>0.55) dep.iron=1+Math.floor(h(5)*2);
+  // silver: Iberia and the Attic and Anatolian ores
+  let ag=0;
+  if(lon<-5&&lat>36&&lat<38.5) ag=2+Math.floor(h(6)*3);
+  else if(lon>23.4&&lon<24.4&&lat>37.4&&lat<38.2) ag=2;              // Laurion
+  else if(h(6)>0.93) ag=1;
+  if(ag) dep.silver=Math.min(5,ag);
+  // clay: alluvial coasts
+  if(h(7)>0.45) dep.clay=1+Math.floor(h(8)*2);
+  // murex beds: the eastern shallows
+  if(lon>33.5&&lat>31&&lat<36.5 && h(9)>0.5) dep.murex=1+Math.floor(h(10)*2);
+  // the western tin road ends on the Atlantic
+  if(lon<-6.5 && h(11)>0.72) dep.tinroad=1;
+  return dep;
+}
+
+const COAST_A=["Kar","Mel","Bal","Sar","Neo","Tar","Gad","Rus","Lep","Hip","Pan","Sol","Nor","Abd","Tha","Myl","Zar","Bir","Emp","Oly"];
+const COAST_B=["thage","ossa","aris","onai","ptis","ymna","akra","essos","oura","antis","ikon","bara","enna","yssa","adir","ythos"];
+function coastName(lon,lat){
+  const a=COAST_A[Math.floor(hashAt(lon,lat,21)*COAST_A.length)];
+  const b=COAST_B[Math.floor(hashAt(lon,lat,22)*COAST_B.length)];
+  return a+b;
+}
+
+/* every site the game knows about, named or surveyed */
+function allSites(){ return (G && G.custom && G.custom.length) ? SITES.concat(G.custom) : SITES; }
+
+/* can a settlement stand on this water-side point? */
+function surveyAt(lon,lat){
+  if(onLand(lon,lat)) return {ok:false, why:"That is inland. Settle on the coast."};
+  const {d,region}=distToCoast(lon,lat);
+  if(d>0.42) return {ok:false, why:"Too far from any shore."};
+  const near=allSites().find(s=>Math.hypot(s.lon-lon,s.lat-lat)<0.75);
+  if(near) return {ok:false, why:`${near.name} already holds this stretch of coast.`};
+  const id="coast_"+lon.toFixed(2)+"_"+lat.toFixed(2);
+  return {ok:true, site:{id, name:coastName(lon,lat), lat:+lat.toFixed(3), lon:+lon.toFixed(3),
+    empty:true, surveyed:true, land:LAND_REGION[region]||("isle"+region),
+    dep:surveyGround(lon,lat)}};
+}
+
+/* =================== colonies =================== */
+function colonyCost(){ return Math.round((150 + G.cities.length*70) * (hasTech("charters")?0.55:1)); }
+
+function expeditionReady(fromId,siteId){
+  const from=cityById(fromId), site=siteById(siteId);
+  if(!from||!site) return "pick a port";
+  if(!hasBld(from,"harbour")) return "no harbour there";
+  if(!site.empty||isOwned(siteId)) return "not available";
+  if(rivalOwns(siteId)) return "another house holds it";
+  if(G.silver<colonyCost()) return `need ${colonyCost()} silver`;
+  const idle=idleShips();
+  if(!idle.length) return "no ship free";
+  if(from.pop<4) return "too few people to spare";
+  return null;
+}
+function idleShips(){ return G.ships.filter(s=>!G.routes.some(r=>r.ships.includes(s.id))
+                                            && !G.expeditions.some(x=>x.ships.includes(s.id))); }
+
+function sendExpedition(fromId,siteId,settlers,grain,timber,nships){
+  if(expeditionReady(fromId,siteId)) return;
+  const from=cityById(fromId), site=siteById(siteId);
+  const ships=idleShips().slice(0,Math.max(1,nships));
+  const hold=ships.reduce((a,s)=>a+shipCap(s),0);
+  settlers=Math.max(1,Math.min(settlers, Math.floor(from.pop-3)));
+  grain =Math.max(0,Math.min(grain, Math.floor(from.stock.grain)));
+  timber=Math.max(0,Math.min(timber,Math.floor(from.stock.timber)));
+  // settlers take room aboard too — four people to a unit of hold
+  if(grain+timber+settlers*4 > hold){
+    const room=Math.max(0,hold-settlers*4);
+    const scale=room/Math.max(1,grain+timber);
+    grain=Math.floor(grain*scale); timber=Math.floor(timber*scale);
+  }
+  G.silver-=colonyCost();
+  from.pop-=settlers;
+  from.stock.grain-=grain; from.stock.timber-=timber;
+  const months=legMonths(from,site,G.t,Math.min(...ships.map(shipSpeed)));
+  G.expeditions.push({id:G.nextRoute++,from:fromId,to:siteId,ships:ships.map(s=>s.id),
+    settlers,grain,timber,legLeft:months,legTotal:months});
+  log(`An expedition of ${settlers} sails from <b>${from.name}</b> for ${site.name} — ${months} weeks.`);
+}
+
+function expeditionTick(){
+  for(let i=G.expeditions.length-1;i>=0;i--){
+    const x=G.expeditions[i];
+    x.legLeft--;
+    if(x.legLeft>0) continue;
+    const site=siteById(x.to);
+    if(isOwned(x.to)){ G.expeditions.splice(i,1); continue; }
+    const c=newCity(x.to,true);
+    c.pop=x.settlers;
+    c.stock.grain=x.grain; c.stock.timber=x.timber;
+    G.cities.push(c);
+    // the ships are now based at the new foundation
+    x.ships.forEach(id=>{ const sh=G.ships.find(s=>s.id===id); if(sh) sh.at=x.to; });
+    log(`Settlers land at <b>${c.name}</b> with ${x.grain|0} grain and ${x.timber|0} timber.`);
+    G.expeditions.splice(i,1);
+  }
+}
+
+
+/* =================== panels =================== */
+function render(){
+  if(G.over){ renderEnd(); draw(); return; }
+  renderLeft(); renderPanel(); draw();
+}
+
+function renderEnd(){
+  if(!G.over) return;
+  const h=G.history||[];
+  const peakPop=h.length? Math.max(...h.map(x=>x.pop)) : 0;
+  const peakCities=h.length? Math.max(...h.map(x=>x.cities)) : 0;
+  const el=document.getElementById("intro");
+  el.style.display="";
+  el.innerHTML=`<div class="introwrap">
+    <h1 class="ttl">The house is ended</h1>
+    <p class="lede">It lasted ${G.year} years. At its height it held ${peakCities}
+      ${peakCities===1?"city":"cities"} and ${peakPop.toFixed(0)} people, and learned
+      ${G.research.done.length} ${G.research.done.length===1?"craft":"crafts"}.
+      The last of them walked out of the gate and did not come back.</p>
+    <p class="era">Somebody else's ships are in the roads now.</p>
+    <div class="starts" id="starts"></div>
+    <p class="introfoot">Choose where to begin again.</p>
+  </div>`;
+  chooseStart();
+}
+
+function renderLeft(){
+  if(G.over){ renderEnd(); return; }
+  document.getElementById("yr").textContent=G.year;
+  document.getElementById("mo").textContent=MONTHS[monthOf(G.t)]+" · wk "+((G.t%WPY)+1);
+  const w=document.getElementById("wind");
+  w.className="wind"+(isEtesian(G.t)?" et":"");
+  w.textContent=isEtesian(G.t)?"Etesians — westbound legs slow":"Seas open";
+
+  const tot={}; GOODS.forEach(g=>tot[g]=0);
+  G.cities.forEach(c=>GOODS.forEach(g=>tot[g]+=c.stock[g]));
+  let h=`<span class="g">Silver</span><span class="v n">${G.silver|0}</span>`;
+  KEY_GOODS.forEach(g=>{
+    h+=`<span class="g">${GOOD_NAME[g]}</span><span class="v n${tot[g]<6?' lo':''}">${tot[g]|0}</span>`;
+  });
+  document.getElementById("treasury").innerHTML=h;
+
+  const evs=activeEvents();
+  document.getElementById("events").innerHTML = evs.length
+    ? evs.map(e=>`<div class="ev ${e.bad?"bad":""}">
+        <div class="en">${e.name}</div>
+        <div class="em">${e.left>=WPY? (e.left/WPY).toFixed(1)+" years more" : e.left+" weeks more"}</div>
+        <div class="bar"><i style="width:${(e.left/e.total)*100}%"></i></div>
+      </div>`).join("")
+    : `<div class="hint">Nothing out of the ordinary.</div>`;
+
+  document.getElementById("cities").innerHTML=G.cities.map(c=>`
+    <div class="card ${G.sel===c.id?'sel':''}" data-city="${c.id}" style="cursor:pointer">
+      <h3>${c.name}</h3>
+      <div class="meta">${c.pop.toFixed(1)} people · ${c.buildings.length} built · ${workersFree(c)} hands free
+      ${c.build?`<br>building ${BLD[c.build.id].name} — ${c.build.left}wk`:""}
+      ${c.ships?`<br>ship on the stocks — ${c.ships.left}wk`:""}</div>
+    </div>`).join("");
+  document.querySelectorAll("[data-city]").forEach(el=>{
+    el.onclick=()=>{G.sel=el.getAttribute("data-city");render();};
+  });
+
+  const idle=G.ships.filter(s=>!G.routes.some(r=>r.ships.includes(s.id)));
+  document.getElementById("fleet").innerHTML=
+    `<span class="g">Ships</span><span class="v n">${G.ships.length}</span>`+
+    `<span class="g">Hold</span><span class="v n">${G.ships.reduce((a,s)=>a+shipCap(s),0)|0}</span>`+
+    `<span class="g">Insight</span><span class="v n">${G.research.points|0}</span>`+
+    `<span class="g">Unassigned</span><span class="v n">${idle.length}</span>`+
+    `<span class="g">Routes</span><span class="v n">${G.routes.length}</span>`+
+    `<span class="g">Expeditions</span><span class="v n">${(G.expeditions||[]).length}</span>`+
+    `<span class="g">In port</span><span class="v n">${(G.visitors||[]).length}</span>`;
+}
+
+function renderPanel(){
+  const p=document.getElementById("panel");
+  if(G.tab==="build") p.innerHTML=buildPanel();
+  else if(G.tab==="learn") p.innerHTML=learnPanel();
+  else if(G.tab==="market") p.innerHTML=marketPanel();
+  else if(G.tab==="annals") p.innerHTML=annalsPanel();
+  else p.innerHTML=tradePanel();
+  wirePanel();
+}
+
+function buildPanel(){
+  // a stretch of open coast the player just tapped
+  if(G.survey){
+    if(G.survey.bad) return `<div class="hint">${G.survey.bad}</div>
+      <div class="hint" style="margin-top:8px">Tap any shoreline to see what the ground there offers.</div>`;
+    const v=G.survey;
+    const ground=Object.entries(v.dep).map(([k,n])=>`${k} ${n}`).join(" · ")||"nothing of note";
+    return `<h3>${v.name}</h3>
+      <div class="hint">Unclaimed coast at ${Math.abs(v.lat).toFixed(2)}°${v.lat<0?"S":"N"},
+        ${Math.abs(v.lon).toFixed(2)}°${v.lon<0?"W":"E"} · ${v.land}</div>
+      <h2>The ground here</h2>
+      <div class="hint">${ground}</div>
+      <div class="row" style="margin-top:10px">
+        <button class="p" id="claimCoast">Mark this coast on the chart</button>
+      </div>
+      <div class="hint">Marking costs nothing. You still have to send settlers.</div>`;
+  }
+  const id=G.sel;
+  if(!id) return `<div class="empty">Pick a place on the chart, or tap open coast to survey it.</div>`;
+  const s=siteById(id);
+  if(!isOwned(id)){
+    if(s.empty){
+      const bound=G.expeditions.find(x=>x.to===id);
+      if(bound) return `<h3>${s.name}</h3>
+        <div class="hint">An expedition is at sea — ${bound.legLeft} of ${bound.legTotal} weeks out,
+        carrying ${bound.settlers} settlers, ${bound.grain|0} grain and ${bound.timber|0} timber.</div>
+        <div class="rt" style="margin-top:9px"><div class="bar">
+          <i style="width:${(1-bound.legLeft/bound.legTotal)*100}%"></i></div></div>`;
+
+      const harbours=G.cities.filter(c=>hasBld(c,"harbour"));
+      if(!harbours.length) return `<h3>${s.name}</h3>
+        <div class="hint">Unsettled: ${Object.entries(s.dep).map(([k,v])=>`${k} ${v}`).join(", ")}.
+        <br>You need a harbour before you can send anyone.</div>`;
+
+      const from=harbours.find(c=>c.id===(G.expFrom||harbours[0].id))||harbours[0];
+      const idle=idleShips();
+      const why=expeditionReady(from.id,id);
+      const hold=idle.length?shipCap(idle[0])|0:0;
+      const dist=Math.round(nmBetween(from,s));
+      const months=idle.length?legMonths(from,s,G.t,shipSpeed(idle[0])):"—";
+      return `<h3>${s.name}</h3>
+        <div class="hint">Unsettled. Land here offers ${Object.entries(s.dep).map(([k,v])=>`${k} ${v}`).join(", ")}.
+        <br>${dist} nautical miles from ${from.name} — about ${months} weeks under sail.</div>
+        <h2>Send an expedition</h2>
+        <label class="f" for="eFrom">Sails from</label>
+        <select id="eFrom">${harbours.map(c=>
+          `<option value="${c.id}" ${c.id===from.id?"selected":""}>${c.name} (${c.pop.toFixed(1)} people)</option>`).join("")}</select>
+        <label class="f" for="eShips">Ships (${idle.length} free, one holds ${hold})</label>
+        <input type="number" id="eShips" min="1" max="${Math.max(1,idle.length)}" value="1">
+        <label class="f" for="eSet">Settlers — they take room aboard</label>
+        <input type="number" id="eSet" min="1" max="${Math.max(1,Math.floor(from.pop-3))}" value="${Math.min(4,Math.max(1,Math.floor(from.pop-3)))}">
+        <label class="f" for="eGrain">Grain to carry (${from.stock.grain|0} in store)</label>
+        <input type="number" id="eGrain" min="0" max="${from.stock.grain|0}" value="${Math.min(40,from.stock.grain|0)}">
+        <label class="f" for="eTimber">Timber to carry (${from.stock.timber|0} in store)</label>
+        <input type="number" id="eTimber" min="0" max="${from.stock.timber|0}" value="${Math.min(50,from.stock.timber|0)}">
+        <div class="row" style="margin-top:9px">
+          <button class="p" id="sendExp" ${why?"disabled":""}>Sail — ${colonyCost()} silver</button>
+        </div>
+        ${why?`<div class="hint warn">${why}</div>`
+             :`<div class="hint">They arrive with only what you send. A camp with no grain does not last.</div>`}`;
+    }
+    const w=G.world[id];
+    return `<h3>${s.name}</h3><div class="hint">A foreign port. You can sell here by running a route to it.</div>
+      <h2>Their prices</h2><div class="stock">`+
+      TRADEABLE.map(g=>
+        `<span class="g">${GOOD_NAME[g]}</span><span class="v n">${w.price[g].toFixed(1)}</span>`).join("")+`</div>`;
+  }
+
+  const c=cityById(id);
+  const st=stageOf(c);
+  const nextSt=STAGES[STAGES.indexOf(st)+1];
+  let h=`<h3>${c.name}</h3>
+    <div class="hint">${st.name} · ${c.pop.toFixed(1)} of ${popCap(c)} people · ${workersFree(c)} hands free
+    <br>${slotsFree(c)} of ${totalSlots(c)} plots free${extraSlots(c)?` · ${extraSlots(c)} won from the land`:""}${nextSt?` · ${nextSt.name} at ${nextSt.pop}`:""}
+    ${(c.dep.forest||0)>0?`<br>woodland ${((c.forest===undefined?1:c.forest)*100)|0}%${
+      c.forest<0.4?` · <span class="warn">cut over</span>`:""}`:""}
+    <br>store ${storeCap(c)}${c.pop>=popCap(c)-0.2?` · <span class="warn">no room for more people</span>`:""}
+    ${droughtFactor(c)<0.95?`<br><span class="warn">Harvest at ${(droughtFactor(c)*100)|0}% — the land is drying.</span>`:""}</div>
+    <h2>In store</h2><div class="stock">`;
+  TRADEABLE.filter(g=>c.stock[g]>0.05 || KEY_GOODS.includes(g)).forEach(g=>{
+    h+=`<span class="g">${GOOD_NAME[g]}</span><span class="v n">${c.stock[g].toFixed(0)}</span>`;
+  });
+  h+=`</div>`;
+
+  if(c.build) h+=`<div class="hint" style="margin-top:8px">Building ${BLD[c.build.id].name} — ${c.build.left} weeks left.</div>`;
+
+  if(c.buildings.length){
+    h+=`<h2>Works</h2>`;
+    const seen={};
+    c.buildings.forEach(id=>{ seen[id]=(seen[id]||0)+1; });
+    Object.keys(seen).sort((a,b)=>(BLD[a].tier||0)-(BLD[b].tier||0)).forEach(id=>{
+      const B=BLD[id], short=c.starved&&c.starved[id];
+      const flow = [
+        B.in ? Object.entries(B.in).map(([g,v])=>`${v} ${GOOD_NAME[g].toLowerCase()}`).join(" + ") : null,
+        B.out? Object.entries(B.out).map(([g,v])=>`${v} ${GOOD_NAME[g].toLowerCase()}`).join(" + ") : null
+      ].filter(Boolean).join(" → ");
+      const thr = c.throttle[id]===undefined ? 1 : c.throttle[id];
+      const why=demolishBlocked(c,id);
+      h+=`<div class="bld"><div class="info">
+        <div class="nm">${B.name}${seen[id]>1?` ×${seen[id]}`:""}</div>
+        <div class="ds">${flow||"—"}</div>
+        ${short?`<div class="cost warn">short of ${GOOD_NAME[short].toLowerCase()}</div>`:""}
+        ${B.in?`<div class="ctl">
+          <input type="range" data-thr="${id}" min="0" max="100" step="5" value="${Math.round(thr*100)}">
+          <span class="pc ${thr<=0?'off':''}">${thr<=0?"off":Math.round(thr*100)+"%"}</span>
+        </div>`:""}
+      </div>
+      <button data-raze="${id}" ${why?"disabled":""} title="${why||`Returns ${Math.round(B.cost.silver*0.33)} silver and ${Math.round(B.cost.timber*0.33)} timber`}">${why?why:"Pull down"}</button>
+      </div>`;
+    });
+  }
+
+  // goods this city's works actually consume — the only ones worth reserving
+  const consumed=new Set();
+  c.buildings.forEach(id=>{ const B=BLD[id]; if(B.in) Object.keys(B.in).forEach(g=>consumed.add(g)); });
+  if(consumed.size){
+    h+=`<h2>Reserves</h2>
+      <div class="hint">Stock held back from the works. Timber reserved here is timber your kilns cannot burn.</div>
+      <div class="resv" style="margin-top:7px">`;
+    [...consumed].forEach(g=>{
+      h+=`<span class="g">${GOOD_NAME[g]} <span class="n">(${c.stock[g].toFixed(0)})</span></span>
+          <input type="number" min="0" step="5" value="${c.reserve[g]||0}" data-resv="${g}">`;
+    });
+    h+=`</div>`;
+  }
+
+  h+=`<h2>Build</h2>`;
+  BUILDINGS.forEach(b=>{
+    const have=countBld(c,b.id);
+    const why=canBuild(c,b);
+    const dep=b.dep?` · ${b.dep} ${depFree(c,b.dep)} left`:"";
+    h+=`<div class="bld">
+      <div class="info">
+        <div class="nm">${b.name}${have?` ×${have}`:""}</div>
+        <div class="ds">${b.desc}</div>
+        <div class="cost">${b.cost.silver} silver · ${b.cost.timber} timber · ${b.workers} hands${dep}</div>
+      </div>
+      <button data-build="${b.id}" ${why?"disabled":""} title="${why||"Build"}">${why||"Build"}</button>
+    </div>`;
+  });
+
+  if(hasBld(c,"shipyard")){
+    h+=`<h2>Shipyard</h2>`;
+    if(c.ships) h+=`<div class="hint">A hull is on the stocks — ${c.ships.left} weeks.</div>`;
+    SHIP_CLASSES.forEach(cl=>{
+      const locked = cl.tech && !hasTech(cl.tech);
+      const ok = !c.ships && !locked && G.silver>=cl.cost.silver && c.stock.timber>=cl.cost.timber;
+      h+=`<div class="bld"><div class="info">
+        <div class="nm">${cl.name}</div>
+        <div class="ds">${cl.desc} Holds ${cl.cap}.</div>
+        <div class="cost">${cl.cost.silver} silver · ${cl.cost.timber} timber · ${Math.round(cl.months*WPM)} weeks</div>
+      </div><button data-ship="${cl.id}" ${ok?"":"disabled"}>${locked?"locked":"Lay down"}</button></div>`;
+    });
+  }
+  return h;
+}
+
+function tradePanel(){
+  const harbours=G.cities.filter(c=>hasBld(c,"harbour"));
+  if(!harbours.length)
+    return `<div class="empty">No harbour yet. Build one before you can move anything by sea.</div>`;
+
+  const idle=G.ships.filter(s=>!G.routes.some(r=>r.ships.includes(s.id)));
+  const from0 = cityById(G.rFrom) || harbours[0];
+  G.rMode = G.rMode || "sell";
+  let h=`<h2>Routes</h2>
+    <div class="row"><button id="toggleNew">${G.uiNew?"Cancel new route":"Open a new route"}</button></div>`;
+  if(G.uiNew) h+=`
+    <label class="f" for="rFrom">From</label>
+    <select id="rFrom">${harbours.map(c=>
+      `<option value="${c.id}" ${c.id===from0.id?"selected":""}>${c.name}</option>`).join("")}</select>
+    <label class="f" for="rTo">To</label>
+    <select id="rTo">${
+      G.cities.filter(c=>hasBld(c,"harbour") && c.id!==from0.id)
+        .map(c=>`<option value="${c.id}">${c.name} (yours)</option>`).join("")+
+      Object.values(G.world).map(w=>`<option value="${w.id}">${w.name}</option>`).join("")
+    }</select>
+    <label class="f" for="rLand">Carried by</label>
+    <select id="rLand">
+      <option value="sea" ${G.rLand?"":"selected"}>Ship</option>
+      <option value="land" ${G.rLand?"selected":""}>Caravan — overland, slow, safe from wind and raiders</option>
+    </select>
+    <label class="f" for="rMode">Purpose</label>
+    <select id="rMode">
+      <option value="sell" ${G.rMode==="sell"?"selected":""}>Sell there (or deliver, if yours)</option>
+      <option value="buy" ${G.rMode==="buy"?"selected":""}>Buy there and bring it home</option>
+      <option value="both" ${G.rMode==="both"?"selected":""}>Sell there, then buy for the return</option>
+    </select>
+    ${(G.rMode!=="buy")?`
+    <label class="f">Carry out and sell — keep at least this much at home</label>
+    <div class="mani">${TRADEABLE.map(g=>`<div class="mi">
+        <label><input type="checkbox" data-mg="sell:${g}"><span>${GOOD_NAME[g]}</span></label>
+        <span class="hold">${(from0?from0.stock[g]:0).toFixed(0)}</span>
+        <input type="number" min="0" step="10" data-ml="sell:${g}" value="0" placeholder="keep">
+      </div>`).join("")}</div>`:""}
+    ${(G.rMode!=="sell")?`
+    <label class="f">Buy and bring home — up to this much on hand</label>
+    <div class="mani">${TRADEABLE.map(g=>`<div class="mi">
+        <label><input type="checkbox" data-mg="buy:${g}"><span>${GOOD_NAME[g]}</span></label>
+        <span class="hold">${(from0?from0.stock[g]:0).toFixed(0)}</span>
+        <input type="number" min="0" step="10" data-ml="buy:${g}" value="120" placeholder="to">
+      </div>`).join("")}</div>`:""}
+    <label class="f" for="rBudget">Most to spend per trip (buying only — blank for no limit)</label>
+    <input type="number" id="rBudget" min="0" step="10" placeholder="no limit">
+    <label class="f" for="rShips">Ships to crew it with (${idle.length} idle)</label>
+    <input type="number" id="rShips" min="0" max="${Math.max(0,idle.length)}" value="${idle.length?1:0}">
+    <div class="hint">You can open a route with none and assign ships to it afterwards.</div>
+    <div class="row" style="margin-top:8px">
+      <button class="p" id="addRoute">Open route</button>
+    </div>
+    ${G.routeErr?`<div class="hint warn">${G.routeErr}</div>`:""}
+    <div class="hint">Tick everything the ship should carry. Selling abroad earns silver; buying spends it.
+      A route to your own city carries the goods across instead.</div>`;
+
+  // standing offers
+  h+=`<h2>Offers</h2>`;
+  const ks=(G.contracts||[]);
+  if(!ks.length) h+=`<div class="empty">No one is asking for anything just now.</div>`;
+  ks.forEach(k=>{
+    const yrs=(k.monthsLeft/WPY).toFixed(1);
+    h+=`<div class="bld"><div class="info">
+      <div class="nm">${k.qty} ${GOOD_NAME[k.good].toLowerCase()} to ${k.portName}</div>
+      <div class="ds">${k.price.toFixed(1)} each — ${(k.qty*k.price)|0} silver in all, plus a bonus on completion.</div>
+      <div class="cost">${k.taken? `${k.delivered} of ${k.qty} delivered · ${yrs}y left`
+                                 : `${yrs} years to fill`}</div>
+    </div>${k.taken?`<div class="have">Taken</div>`
+                  :`<button data-take="${k.id}">Accept</button>`}</div>`;
+  });
+
+  h+=fleetSection();
+  h+=`<h2>Running</h2>`;
+  if(!G.routes.length) h+=`<div class="empty">Nothing at sea.</div>`;
+  G.routes.forEach(r=>{
+    const to=isOwned(r.to)?cityById(r.to):G.world[r.to];
+    const fromC=cityById(r.from);
+    const prog=r.legTotal?1-(r.legLeft/r.legTotal):0;
+    const open=G.uiRoute===r.id;
+    const verb=r.mode==="both"?"trading":r.mode==="buy"?"buying":isOwned(r.to)?"delivering":"selling";
+    h+=`<div class="crow ${open?"open":""}" data-ropen="${r.id}">
+      <div class="cn">
+        <b>${fromC?fromC.name:"?"} → ${to?to.name:"?"}</b>
+        <i>${verb} ${manifestSummary(r)||"nothing"}</i>
+      </div>
+      <div class="cw"><div class="bar"><i style="width:${Math.max(0,Math.min(1,prog))*100}%;background:var(--murex-lit)"></i></div></div>
+      <div class="cx">${open?"▾":"▸"}</div>
+    </div>`;
+    if(!open) return;
+
+    h+=`<div class="xp">
+      <div class="leg" style="font-size:11.5px;color:var(--dim);margin-bottom:8px">
+        ${r.land? `caravan · holds ${caravanCap(cityById(r.from))|0}`
+                 : `${r.ships.length} ship${r.ships.length>1?"s":""} · holds ${routeCap(r)|0}${routeEscort(r)?` · ${routeEscort(r)} escort`:""}`} · ${r.status||"loading"}
+        ${r.lastSale?` · earned ${r.lastSale|0}`:""}${r.lastCost?` · paid ${r.lastCost|0}`:""}
+      </div>
+
+      ${(() => {
+        const locked = r.land ? r.phase!=="load" : !routeInPort(r);
+        const harbours=G.cities.filter(c=>r.land? caravanCap(c)>0 : hasBld(c,"harbour"));
+        return `
+        <label class="f" for="ef_${r.id}">Sails from${locked?" — at sea, cannot be changed now":""}</label>
+        <select id="ef_${r.id}" data-rfrom="${r.id}" ${locked?"disabled":""}>
+          ${harbours.map(c=>`<option value="${c.id}" ${c.id===r.from?"selected":""}>${c.name}</option>`).join("")}
+        </select>
+        <label class="f" for="et_${r.id}">Bound for</label>
+        <select id="et_${r.id}" data-rto="${r.id}" ${locked?"disabled":""}>
+          ${G.cities.filter(c=>c.id!==r.from && (r.land? true : hasBld(c,"harbour")))
+             .map(c=>`<option value="${c.id}" ${c.id===r.to?"selected":""}>${c.name} (yours)</option>`).join("")}
+          ${Object.values(G.world).filter(w=>!r.land || sameLand(siteById(r.from), siteById(w.id)))
+             .map(w=>`<option value="${w.id}" ${w.id===r.to?"selected":""}>${w.name}</option>`).join("")}
+        </select>
+        ${r.retargetErr?`<div class="hint warn">${r.retargetErr}</div>`:""}`;
+      })()}
+
+      <label class="f" for="em_${r.id}">Purpose</label>
+      <select id="em_${r.id}" data-rmode="${r.id}" ${isOwned(r.to)?"disabled":""}>
+        <option value="sell" ${r.mode==="sell"?"selected":""}>Sell there</option>
+        <option value="buy" ${r.mode==="buy"?"selected":""}>Buy there</option>
+        <option value="both" ${r.mode==="both"?"selected":""}>Sell, then buy</option>
+      </select>
+
+      ${routeBuys(r)?`<label class="f">Most to spend per trip</label>
+        <input type="number" min="0" step="10" placeholder="no limit"
+          value="${r.budget||""}" data-budget="${r.id}">`:""}
+
+      ${routeSells(r)?`
+      <label class="f">Carry out and sell — keep at least this much at home</label>
+      <div class="mani">${TRADEABLE.map(g=>{
+        const it=sellItems(r).find(i=>i.good===g);
+        return `<div class="mi">
+          <label><input type="checkbox" data-emg="${r.id}:sell:${g}" ${it?"checked":""}><span>${GOOD_NAME[g]}</span></label>
+          <span class="hold">${(fromC?fromC.stock[g]:0).toFixed(0)}</span>
+          <input type="number" min="0" step="10" data-eml="${r.id}:sell:${g}" value="${it?(it.keep||0):0}">
+        </div>`;
+      }).join("")}</div>`:""}
+      ${routeBuys(r)?`
+      <label class="f">Buy and bring home — up to this much on hand</label>
+      <div class="mani">${TRADEABLE.map(g=>{
+        const it=buyItems(r).find(i=>i.good===g);
+        return `<div class="mi">
+          <label><input type="checkbox" data-emg="${r.id}:buy:${g}" ${it?"checked":""}><span>${GOOD_NAME[g]}</span></label>
+          <span class="hold">${(fromC?fromC.stock[g]:0).toFixed(0)}</span>
+          <input type="number" min="0" step="10" data-eml="${r.id}:buy:${g}" value="${it?it.upTo:120}">
+        </div>`;
+      }).join("")}</div>`:""}
+
+      ${!r.land?`
+      <label class="f">Ships on this run — holds ${routeCap(r)|0}${routeInPort(r)?"":" · at sea, cannot be changed now"}</label>
+      <div class="mani" style="max-height:170px">
+        ${routeShips(r).length? routeShips(r).map(sh=>`<div class="mi">
+            <label><span>${sh.name} · ${SHIPCLS[sh.cls].name} · ${shipCap(sh)|0}${SHIPCLS[sh.cls].war?" · escort":""}</span></label>
+            <button data-remship="${r.id}:${sh.id}" ${routeInPort(r)?"":"disabled"}>Remove</button>
+          </div>`).join("") : `<div class="empty">No ships on this route.</div>`}
+        ${idleShips().length? `<div class="leg" style="margin:6px 0 2px;color:var(--dim)">Idle and available</div>`+
+          idleShips().map(sh=>`<div class="mi">
+            <label><span>${sh.name} · ${SHIPCLS[sh.cls].name} · ${shipCap(sh)|0}${SHIPCLS[sh.cls].war?" · escort":""}</span></label>
+            <button data-addship="${r.id}:${sh.id}" ${routeInPort(r)?"":"disabled"}>Add</button>
+          </div>`).join("") : ""}
+      </div>`:""}
+
+      <div class="row" style="margin-top:9px">
+        <button data-drop="${r.id}">Close this route</button>
+      </div>
+    </div>`;
+  });
+  return h;
+}
+
+/* ---- research panel ---- */
+function learnPanel(){
+  const r=G.research;
+  const cur=r.current?TECHBY[r.current]:null;
+  let h=`<div class="hint">Insight accrues from your people, your scribes and contact with foreign ports.
+    <b class="n">${(insightPerMonth()).toFixed(2)}</b> a month, ${(insightPerMonth()*RATE).toFixed(2)} a week.</div>`;
+  if(cur){
+    const pct=Math.min(1,r.points/cur.cost);
+    h+=`<div class="xp" style="border:1px solid var(--murex-lit);border-radius:3px;margin:9px 0">
+      <div style="display:flex;justify-content:space-between"><b>${cur.name}</b>
+        <span class="n">${r.points|0}/${cur.cost}</span></div>
+      <div class="od" style="margin:3px 0 6px">${cur.desc}</div>
+      <div class="bar"><i style="width:${pct*100}%;background:var(--murex-lit)"></i></div></div>`;
+  } else {
+    h+=`<div class="hint" style="margin-top:8px">Nothing under study. Banked insight:
+      <b class="n">${r.points|0}</b>.</div>`;
+  }
+  const open2=eraOpen();
+  h+=`<div class="hint" style="margin-top:9px">${open2
+    ? "The later age is open to you."
+    : `The later age opens once ${ERA2_AT} crafts of the first are known — ${G.research.done.filter(id=>!(TECHBY[id]||{}).era).length} so far.`}</div>`;
+  BRANCHES.forEach(br=>{
+    h+=`<h2>${br}</h2>`;
+    TECHS.filter(t=>t.br===br).forEach(t=>{
+      const done=hasTech(t.id), open=techOpen(t), busy=!!r.current;
+      const label = done?"Known":(t.era===2&&!eraOpen())?"later age":(!open?`needs ${TECHBY[t.req].name.toLowerCase()}`:busy?"—":"Study");
+      h+=`<div class="bld">
+        <div class="info">
+          <div class="nm">${t.name}</div>
+          <div class="ds">${t.desc}</div>
+          <div class="cost">${t.cost} insight</div>
+        </div>
+        ${done?`<div class="have">Known</div>`
+              :`<button data-tech="${t.id}" ${(!open||busy)?"disabled":""}>${label}</button>`}
+      </div>`;
+    });
+  });
+  return h;
+}
+
+/* ---- fleet: compact rows, details on tap ---- */
+function fleetSection(){
+  let h=`<h2>Fleet — ${G.ships.length} ship${G.ships.length===1?"":"s"}, ${G.ships.reduce((a,s)=>a+shipCap(s),0)|0} of hold</h2>`;
+  if(!G.ships.length) return h+`<div class="empty">No ships yet.</div>`;
+
+  G.ships.forEach(sh=>{
+    const cls=SHIPCLS[sh.cls];
+    const onRoute=G.routes.find(r=>r.ships.includes(sh.id));
+    const open=G.uiShip===sh.id;
+    const wearCol = sh.wear>.6?"var(--rust)":sh.wear>.3?"var(--ochre)":"var(--verdigris)";
+    h+=`<div class="crow ${open?"open":""}" data-sopen="${sh.id}">
+      <div class="cn">
+        <b>${sh.name}${sh.condemned?" ⚠":""}</b>
+        <i>${cls.name} · holds ${shipCap(sh)|0} · ${onRoute?"working":"idle"}</i>
+      </div>
+      <div class="cw"><div class="bar"><i style="width:${sh.wear*100}%;background:${wearCol}"></i></div></div>
+      <div class="cx">${open?"▾":"▸"}</div>
+    </div>`;
+
+    if(!open) return;
+    const rc=refitCost(sh);
+    const yard=G.cities.find(x=>x.stock.timber>=rc.timber && hasBld(x,"harbour"));
+    const canRefit = sh.wear>0.02 && G.silver>=rc.silver && !!yard;
+    h+=`<div class="xp">
+      <div class="nmrow">
+        <input type="text" maxlength="22" value="${sh.name}" data-sname="${sh.id}" aria-label="Ship name">
+      </div>
+      <div class="od" style="margin-bottom:8px">
+        speed ${shipSpeed(sh).toFixed(2)} · wear ${(sh.wear*100)|0}%${sh.condemned?` · <span class="warn">worn out</span>`:""}
+      </div>
+      <label class="f" for="sr_${sh.id}">Serving</label>
+      <select id="sr_${sh.id}" data-setroute="${sh.id}">
+        <option value="">Idle in port</option>
+        ${G.routes.filter(r=>!r.land).map(r=>{
+          const to=isOwned(r.to)?cityById(r.to):G.world[r.to];
+          const busy=!routeInPort(r);
+          const here=r.ships.includes(sh.id);
+          return `<option value="${r.id}" ${here?"selected":""} ${(busy&&!here)?"disabled":""}>${
+            (cityById(r.from)||{name:"?"}).name} → ${to?to.name:"?"}${busy?" (at sea)":""}</option>`;
+        }).join("")}
+      </select>
+      ${onRoute&&!routeInPort(onRoute)?`<div class="od warn" style="margin-top:4px">At sea — it can be moved when it next makes port.</div>`:""}
+      <div class="row"><button data-refit="${sh.id}" ${canRefit?"":"disabled"}>Refit — ${rc.silver}s ${rc.timber}t</button></div>
+      ${REFITS.map(u=>{
+        const has=sh.refits.includes(u.id);
+        const locked=u.tech&&!hasTech(u.tech);
+        const y2=G.cities.find(x=>x.stock.timber>=u.cost.timber&&hasBld(x,"harbour"));
+        const afford=G.silver>=u.cost.silver&&!!y2;
+        return `<div class="bld"><div class="info">
+          <div class="nm">${u.name}</div><div class="ds">${u.desc}</div>
+          <div class="cost">${u.cost.silver} silver · ${u.cost.timber} timber</div></div>
+          ${has?`<div class="have">Fitted</div>`
+              :`<button data-up="${sh.id}:${u.id}" ${(locked||!afford)?"disabled":""}>${locked?"locked":"Fit"}</button>`}
+        </div>`;
+      }).join("")}
+    </div>`;
+  });
+  return h;
+}
+
+/* ---- annals: how the house has fared ---- */
+function spark(series, colour, label, fmt){
+  const h=[...(G.history||[])];
+  if(h.length<2) return "";
+  const vals=h.map(series);
+  const max=Math.max(...vals,1), min=Math.min(...vals,0);
+  const W=250,H=52;
+  const pts=vals.map((v,i)=>{
+    const x=(i/(vals.length-1))*W;
+    const y=H-((v-min)/Math.max(max-min,0.001))*H;
+    return x.toFixed(1)+","+y.toFixed(1);
+  }).join(" ");
+  const now=vals[vals.length-1], peak=max;
+  return `<div style="margin-bottom:13px">
+    <div style="display:flex;justify-content:space-between;font-size:12.5px">
+      <span style="color:var(--dim)">${label}</span>
+      <span class="n">${fmt(now)} <span style="color:var(--dim)">· peak ${fmt(peak)}</span></span>
+    </div>
+    <svg viewBox="0 0 ${W} ${H}" width="100%" height="52" preserveAspectRatio="none"
+      style="display:block;margin-top:3px;background:rgba(159,178,188,.05);border-radius:2px">
+      <polyline points="${pts}" fill="none" stroke="${colour}" stroke-width="1.6"
+        vector-effect="non-scaling-stroke"/>
+    </svg></div>`;
+}
+function annalsPanel(){
+  const h=G.history||[];
+  if(h.length<2) return `<div class="empty">Too early for a chronicle. Let some years pass.</div>`;
+  const f0=n=>String(Math.round(n));
+  let out=`<div class="hint">${h.length} years recorded.</div><div style="margin-top:10px"></div>`;
+  out+=spark(d=>d.pop,"#4FA88B","People",n=>n.toFixed(0));
+  out+=spark(d=>d.silver,"#C9A227","Silver",f0);
+  out+=spark(d=>d.vol,"#9A6BAE","Goods shipped each year",f0);
+  out+=spark(d=>d.cities,"#9FB2BC","Cities",f0);
+
+  out+=`<h2>Rival houses</h2>`;
+  (G.rivals||[]).forEach(r=>{
+    const p=rivalProfile(r);
+    out+=`<div class="bld"><div class="info">
+      <div class="nm" style="color:${r.colour}">${r.name}</div>
+      <div class="ds">${r.cities.length? "holds "+r.cities.map(id=>siteById(id).name).join(", ")
+                                       : "no colonies yet"}</div>
+      <div class="ds">sells ${p.sells.length? p.sells.slice(0,4).map(g=>GOOD_NAME[g].toLowerCase()).join(", "):"little"} ·
+        buys ${p.buys.slice(0,4).map(g=>GOOD_NAME[g].toLowerCase()).join(", ")}</div>
+      <div class="cost">${r.lastAct? `last ${r.lastAct.kind} ${GOOD_NAME[r.lastAct.good].toLowerCase()} at ${r.lastAct.port}`:"quiet"} ·
+        ${r.silver|0} silver</div>
+    </div></div>`;
+  });
+  return out;
+}
+
+function marketPanel(){
+  const vs=G.visitors||[];
+  const harbours=G.cities.filter(c=>hasBld(c,"harbour"));
+  let h=`<div class="hint">Traders put in where there is a harbour to put into.
+    A merchant quarter roughly doubles the callers, and dealing fairly brings more.</div>`;
+  if(!harbours.length) return h+`<div class="empty" style="margin-top:9px">No harbour yet, so no one calls.</div>`;
+
+  h+=`<h2>In port now</h2>`;
+  if(!vs.length) h+=`<div class="empty">No one is calling just now.</div>`;
+  vs.forEach(v=>{
+    const c=cityById(v.city); if(!c) return;
+    const rate=offerRating(v);
+    const ratio=(v.kind==="buy"? v.price/v.anchor : v.anchor/v.price);
+    const canDo = v.kind==="buy" ? c.stock[v.good]>=1 : G.silver>=v.price;
+    const yours = v.kind==="buy" ? `you hold ${c.stock[v.good].toFixed(0)}`
+                                 : `costs ${(Math.min(v.qty, Math.floor(G.silver/Math.max(v.price,.01)))*v.price)|0} for what you can take`;
+    h+=`<div class="rt">
+      <div class="hd"><b>${v.kind==="buy"?"Wants":"Offers"} ${v.qty} ${GOOD_NAME[v.good].toLowerCase()}</b>
+        <span class="leg" style="color:${rate.col}">${rate.word}</span></div>
+      <div class="leg">a trader out of ${v.from}, calling at ${c.name}</div>
+      <div class="leg">${v.price.toFixed(1)} each · usually ${v.anchor.toFixed(1)} ·
+        ${(ratio).toFixed(2)}× in your favour</div>
+      <div class="leg">${yours} · sails in ${v.left} week${v.left===1?"":"s"}</div>
+      <div class="row" style="margin-top:6px">
+        <button class="${rate.word==="generous"?"p":""}" data-deal="${v.id}" ${canDo?"":"disabled"}>
+          ${v.kind==="buy"?"Sell to them":"Buy from them"}</button>
+        <button data-nodeal="${v.id}">Send away</button>
+      </div>
+    </div>`;
+  });
+
+  h+=`<h2>Your harbours</h2>`;
+  harbours.forEach(c=>{
+    h+=`<div class="bld"><div class="info">
+      <div class="nm">${c.name}</div>
+      <div class="ds">${hasBld(c,"quarter")?"merchant quarter":"harbour only"} ·
+        standing ${((cityRenown(c))*100)|0}%</div>
+    </div></div>`;
+  });
+  return h;
+}
+
+function wirePanel(){
+  const c=isOwned(G.sel)?cityById(G.sel):null;
+  document.querySelectorAll("[data-build]").forEach(btn=>{
+    btn.onclick=()=>{
+      const b=BLD[btn.getAttribute("data-build")];
+      if(canBuild(c,b)) return;
+      G.silver-=b.cost.silver; c.stock.timber-=b.cost.timber;
+      c.build={id:b.id,left:Math.max(3,Math.round((b.cost.silver+b.cost.timber)/40*WPM))};
+      render();
+    };
+  });
+  document.querySelectorAll("[data-ship]").forEach(btn=>{
+    btn.onclick=()=>{
+      const cl=SHIPCLS[btn.getAttribute("data-ship")];
+      if(c.ships||G.silver<cl.cost.silver||c.stock.timber<cl.cost.timber) return;
+      G.silver-=cl.cost.silver; c.stock.timber-=cl.cost.timber;
+      c.ships={left:Math.round(cl.months*WPM), cls:cl.id}; render();
+    };
+  });
+  document.querySelectorAll("[data-tech]").forEach(btn=>{
+    btn.onclick=()=>{ G.research.current=btn.getAttribute("data-tech"); renderPanel(); };
+  });
+  document.querySelectorAll("[data-refit]").forEach(btn=>{
+    btn.onclick=()=>{
+      const sh=G.ships.find(x=>x.id==btn.getAttribute("data-refit"));
+      const rc=refitCost(sh);
+      const yard=G.cities.find(x=>x.stock.timber>=rc.timber && hasBld(x,"harbour"));
+      if(!sh||!yard||G.silver<rc.silver) return;
+      G.silver-=rc.silver; yard.stock.timber-=rc.timber;
+      sh.wear=0; sh.condemned=false;
+      log(`<b>${sh.name}</b> refitted at ${yard.name}.`);
+      render();
+    };
+  });
+  document.querySelectorAll("[data-up]").forEach(btn=>{
+    btn.onclick=()=>{
+      const [sid,uid]=btn.getAttribute("data-up").split(":");
+      const sh=G.ships.find(x=>x.id==sid), u=REFITBY[uid];
+      const yard=G.cities.find(x=>x.stock.timber>=u.cost.timber && hasBld(x,"harbour"));
+      if(!sh||!u||!yard||G.silver<u.cost.silver||sh.refits.includes(uid)) return;
+      G.silver-=u.cost.silver; yard.stock.timber-=u.cost.timber;
+      sh.refits.push(uid);
+      log(`<b>${sh.name}</b> fitted with ${u.name.toLowerCase()}.`);
+      render();
+    };
+  });
+  document.querySelectorAll("[data-raze]").forEach(b=>{
+    b.onclick=()=>{ demolish(c, b.getAttribute("data-raze")); render(); renderLog(); };
+  });
+  document.querySelectorAll("[data-thr]").forEach(el=>{
+    el.oninput=()=>{
+      c.throttle[el.getAttribute("data-thr")] = (+el.value)/100;
+      const pc=el.parentElement.querySelector(".pc");
+      pc.textContent = +el.value===0 ? "off" : el.value+"%";
+      pc.className = "pc"+(+el.value===0?" off":"");
+    };
+  });
+  document.querySelectorAll("[data-resv]").forEach(el=>{
+    el.onchange=()=>{
+      c.reserve[el.getAttribute("data-resv")] = Math.max(0,+el.value||0);
+      renderPanel();
+    };
+  });
+
+  const claim=document.getElementById("claimCoast");
+  if(claim) claim.onclick=()=>{
+    const v=G.survey;
+    if(!v||v.bad) return;
+    G.custom=G.custom||[];
+    if(!G.custom.some(c=>c.id===v.id)) G.custom.push(v);
+    G.survey=null; G.sel=v.id;
+    log(`The coast at <b>${v.name}</b> is surveyed and set on the chart.`);
+    render(); renderLog();
+  };
+
+  const eFrom=document.getElementById("eFrom");
+  if(eFrom) eFrom.onchange=()=>{ G.expFrom=eFrom.value; renderPanel(); };
+  const sendBtn=document.getElementById("sendExp");
+  if(sendBtn) sendBtn.onclick=()=>{
+    const v=id=>+(document.getElementById(id)||{}).value||0;
+    sendExpedition(eFrom.value, G.sel, v("eSet"), v("eGrain"), v("eTimber"), v("eShips"));
+    render(); renderLog();
+  };
+
+  // expanding rows
+  document.querySelectorAll("[data-sopen]").forEach(el=>{
+    el.onclick=e=>{
+      if(e.target.tagName==="INPUT"||e.target.tagName==="BUTTON") return;
+      const id=+el.getAttribute("data-sopen");
+      G.uiShip = G.uiShip===id ? null : id;
+      renderPanel();
+    };
+  });
+  document.querySelectorAll("[data-ropen]").forEach(el=>{
+    el.onclick=e=>{
+      if(e.target.tagName==="INPUT"||e.target.tagName==="BUTTON"||e.target.tagName==="SELECT") return;
+      const id=+el.getAttribute("data-ropen");
+      G.uiRoute = G.uiRoute===id ? null : id;
+      renderPanel();
+    };
+  });
+  // renaming a ship
+  document.querySelectorAll("[data-sname]").forEach(el=>{
+    const commit=()=>{
+      const sh=G.ships.find(x=>x.id==el.getAttribute("data-sname"));
+      const v=el.value.trim();
+      if(sh && v) sh.name=v.slice(0,22);
+      renderLeft();
+    };
+    el.onchange=commit;
+    el.onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); commit(); el.blur(); } };
+  });
+  // editing a running route
+  document.querySelectorAll("[data-rmode]").forEach(el=>{
+    el.onchange=()=>{
+      const r=G.routes.find(x=>x.id==el.getAttribute("data-rmode"));
+      if(!r) return;
+      r.mode=el.value;
+      // limits mean different things in each direction, so reset them sensibly
+      // 9999 is the "no ceiling" sentinel a sell entry carries; it is not a
+      // sensible buy target, so give the entry a real one when flipping over
+      routeItems(r).forEach(i=>{
+        if(r.mode==="buy") i.role="buy";
+        else if(r.mode==="sell") i.role="sell";
+        if(i.role==="buy"){ i.upTo = (!i.upTo || i.upTo>=9999) ? 120 : i.upTo; }
+        else { i.keep = i.keep || 0; i.upTo = 9999; }
+      });
+      renderPanel();
+    };
+  });
+  document.querySelectorAll("[data-emg]").forEach(box=>{
+    box.onchange=()=>{
+      const [rid,role,g]=box.getAttribute("data-emg").split(":");
+      const r=G.routes.find(x=>x.id==rid); if(!r) return;
+      const items=routeItems(r);
+      if(box.checked){
+        if(!items.find(i=>i.good===g && i.role===role)){
+          const lim=+((document.querySelector(`[data-eml="${rid}:${role}:${g}"]`)||{}).value)||0;
+          items.push(role==="buy" ? {good:g,upTo:Math.max(1,lim||120),keep:0,role:"buy"}
+                                  : {good:g,keep:Math.max(0,lim),upTo:9999,role:"sell"});
+        }
+      } else {
+        r.items=items.filter(i=>!(i.good===g && i.role===role));
+      }
+      renderPanel();
+    };
+  });
+  document.querySelectorAll("[data-eml]").forEach(el=>{
+    el.onchange=()=>{
+      const [rid,role,g]=el.getAttribute("data-eml").split(":");
+      const r=G.routes.find(x=>x.id==rid); if(!r) return;
+      const it=routeItems(r).find(i=>i.good===g && i.role===role); if(!it) return;
+      const v=Math.max(0,+el.value||0);
+      if(role==="buy") it.upTo=Math.max(1,v); else it.keep=v;
+    };
+  });
+  document.querySelectorAll("[data-rfrom]").forEach(el=>{
+    el.onchange=()=>{
+      const r=G.routes.find(x=>x.id==el.getAttribute("data-rfrom")); if(!r) return;
+      const why=retargetBlocked(r, el.value, r.to);
+      if(why){ r.retargetErr=why; } else { r.retargetErr=null; retarget(r, el.value, r.to); }
+      renderPanel(); renderLog();
+    };
+  });
+  document.querySelectorAll("[data-rto]").forEach(el=>{
+    el.onchange=()=>{
+      const r=G.routes.find(x=>x.id==el.getAttribute("data-rto")); if(!r) return;
+      const why=retargetBlocked(r, r.from, el.value);
+      if(why){ r.retargetErr=why; } else { r.retargetErr=null; retarget(r, r.from, el.value); }
+      renderPanel(); renderLog();
+    };
+  });
+  document.querySelectorAll("[data-addship]").forEach(b=>{
+    b.onclick=()=>{
+      const [rid,sid]=b.getAttribute("data-addship").split(":");
+      assignShip(+sid, +rid); renderPanel(); renderLeft();
+    };
+  });
+  document.querySelectorAll("[data-remship]").forEach(b=>{
+    b.onclick=()=>{
+      const [,sid]=b.getAttribute("data-remship").split(":");
+      assignShip(+sid, null); renderPanel(); renderLeft();
+    };
+  });
+  document.querySelectorAll("[data-setroute]").forEach(el=>{
+    el.onchange=()=>{
+      const sid=+el.getAttribute("data-setroute");
+      assignShip(sid, el.value===""? null : +el.value);
+      renderPanel(); renderLeft();
+    };
+  });
+  document.querySelectorAll("[data-deal]").forEach(b=>{
+    b.onclick=()=>{ acceptOffer(+b.getAttribute("data-deal")); render(); renderLog(); };
+  });
+  document.querySelectorAll("[data-nodeal]").forEach(b=>{
+    b.onclick=()=>{
+      G.visitors=(G.visitors||[]).filter(x=>x.id!=b.getAttribute("data-nodeal"));
+      renderPanel();
+    };
+  });
+  document.querySelectorAll("[data-take]").forEach(b=>{
+    b.onclick=()=>{
+      const k=(G.contracts||[]).find(x=>x.id==b.getAttribute("data-take"));
+      if(k) k.taken=true;
+      renderPanel();
+    };
+  });
+  const rl=document.getElementById("rLand");
+  if(rl) rl.onchange=()=>{ G.rLand = rl.value==="land"; renderPanel(); };
+  const tn=document.getElementById("toggleNew");
+  if(tn) tn.onclick=()=>{ G.uiNew=!G.uiNew; G.routeErr=null; renderPanel(); };
+
+  const rModeSel=document.getElementById("rMode");
+  if(rModeSel) rModeSel.onchange=()=>{ G.rMode=rModeSel.value; renderPanel(); };
+  const rFromSel=document.getElementById("rFrom");
+  if(rFromSel) rFromSel.onchange=()=>{ G.rFrom=rFromSel.value; renderPanel(); };
+
+  const add=document.getElementById("addRoute");
+  if(add) add.onclick=()=>{
+    const from=document.getElementById("rFrom").value;
+    const to=document.getElementById("rTo").value;
+    const mode=document.getElementById("rMode").value;
+    const byLand=document.getElementById("rLand").value==="land";
+    const budget=+(document.getElementById("rBudget").value)||0;
+    const n=Math.max(0,+document.getElementById("rShips").value||0);
+    G.routeErr=null;
+    if(!to){ G.routeErr="Choose somewhere to sail to."; renderPanel(); return; }
+    if(from===to){ G.routeErr="A route needs two different ports."; renderPanel(); return; }
+
+    // gather both halves of the manifest
+    const items=[];
+    document.querySelectorAll("[data-mg]").forEach(box=>{
+      if(!box.checked) return;
+      const [role,g]=box.getAttribute("data-mg").split(":");
+      const lim=+((document.querySelector(`[data-ml="${role}:${g}"]`)||{}).value)||0;
+      items.push(role==="buy" ? {good:g,upTo:Math.max(1,lim||120),keep:0,role:"buy"}
+                              : {good:g,keep:Math.max(0,lim),upTo:9999,role:"sell"});
+    });
+    if(!items.length){ G.routeErr="Tick at least one good for the manifest."; renderPanel(); return; }
+
+    const idle=byLand? [] : G.ships.filter(s=>!G.routes.some(r=>r.ships.includes(s.id))).slice(0,n);
+    if(byLand){
+      const a=siteById(from), b=siteById(to);
+      if(!sameLand(a,b)){ G.routeErr="No road runs there — those two are not on the same land."; renderPanel(); return; }
+      if(caravanCap(cityById(from))<1){ G.routeErr=`${cityById(from).name} has no caravanserai.`; renderPanel(); return; }
+    }
+    G.routes.push({id:G.nextRoute++,from,to,items,land:byLand,mode:isOwned(to)?"sell":mode,
+                   budget:budget||null,ships:idle.map(s=>s.id),
+                   phase:"load",status:"loading",cargo:{},legLeft:0,legTotal:0});
+    G.uiNew=false; G.routeErr=null;
+    render();
+  };
+
+  document.querySelectorAll("[data-budget]").forEach(el=>{
+    el.onchange=()=>{
+      const r=G.routes.find(x=>x.id==el.getAttribute("data-budget"));
+      if(r) r.budget = Math.max(0,+el.value||0) || null;
+    };
+  });
+  document.querySelectorAll("[data-drop]").forEach(b=>{
+    b.onclick=()=>{ G.routes=G.routes.filter(r=>r.id!=b.getAttribute("data-drop")); render(); };
+  });
+}
+
+function renderLog(){
+  document.getElementById("log").innerHTML = G.log.length
+    ? G.log.map(l=>`<p><span class="y">Year ${l.y}</span> ${l.msg}</p>`).join("")
+    : `<p>Nothing recorded yet.</p>`;
+}
+
+
+/* =================== options =================== */
+const OPTS={
+  speed:3,          // weeks per beat when running
+  eventRate:1,      // 0 turns fortune off entirely
+  labels:"auto",    // auto | all | own
+  showRoutes:true,
+  pauseOnEvent:false,
+  autosave:0,       // years between autosaves, 0 = off
+};
+const OPT_DEFS=[
+  {k:"speed",type:"range",min:1,max:8,step:1,name:"Game speed",
+   d:"How fast the weeks pass while running."},
+  {k:"eventRate",type:"range",min:0,max:2,step:.25,name:"Fortune",
+   d:"How often droughts, tin cuts and good years arrive. Zero for a still world."},
+  {k:"autosave",type:"select",opts:[[0,"Off"],[10,"Every 10 years"],[25,"Every 25 years"],[50,"Every 50 years"]],
+   name:"Autosave",d:"Writes to the last slot you used, or slot 1."},
+  {k:"labels",type:"select",opts:[["auto","When zoomed in"],["all","Always"],["own","Only mine"]],
+   name:"Port names",d:"How much of the chart is labelled."},
+  {k:"showRoutes",type:"toggle",name:"Draw shipping lanes",d:"Lines between the ports you trade with."},
+  {k:"pauseOnEvent",type:"toggle",name:"Pause on tidings",d:"Stop the clock whenever fortune turns."},
+];
+
+/* =================== saving =================== */
+const SAVE_KEY=n=>"tinroads:slot"+n;
+const SLOTS=[1,2,3];
+let lastSlot=1;
+
+async function storeSet(k,v){
+  if(typeof window!=="undefined" && window.storage && window.storage.set){
+    try{ await window.storage.set(k,v); return true; }catch(e){}
+  }
+  try{ localStorage.setItem(k,v); return true; }catch(e){ return false; }
+}
+async function storeGet(k){
+  if(typeof window!=="undefined" && window.storage && window.storage.get){
+    try{ const r=await window.storage.get(k); return r? r.value : null; }catch(e){}
+  }
+  try{ return localStorage.getItem(k); }catch(e){ return null; }
+}
+
+function serialise(){
+  if(!G||!G.cities.length) return null;
+  return JSON.stringify({
+    v:3, version:VERSION, saved:Date.now(),
+    year:G.year, capital:G.cities[0].name, cities:G.cities.length,
+    opts:OPTS, shipSeq:SHIP_SEQ,
+    g:{t:G.t,year:G.year,silver:G.silver,cities:G.cities,ships:G.ships,routes:G.routes,
+       expeditions:G.expeditions,events:G.events,research:G.research,world:G.world,
+       tinFlow:G.tinFlow,nextRoute:G.nextRoute,sel:G.sel,tab:G.tab,log:G.log,
+       custom:G.custom,nextContract:G.nextContract,visitors:G.visitors,nextVisitor:G.nextVisitor}
+  });
+}
+function deserialise(txt){
+  const d=JSON.parse(txt);
+  if(!d||!d.g) throw new Error("not a save");
+  if(d.version && d.version!==VERSION)
+    log(`Loaded a save written by version ${d.version}; this build is ${VERSION}.`);
+  G=Object.assign(newGame("tyre"), d.g);
+  G.running=false;
+  if(d.opts) Object.assign(OPTS,d.opts);
+  SHIP_SEQ=d.shipSeq||Math.max(0,...G.ships.map(s=>s.id||0));
+  if(!G.cities.some(c=>c.id===G.sel)) G.sel=G.cities[0]?G.cities[0].id:null;
+  document.getElementById("intro").style.display="none";
+  resize(); render(); renderLog(); setPlayLabel();
+  return d;
+}
+
+async function saveTo(slot){
+  const txt=serialise();
+  if(!txt){ return false; }
+  const ok=await storeSet(SAVE_KEY(slot),txt);
+  lastSlot=slot;
+  if(ok) log(`The chronicle is set down (slot ${slot}).`);
+  renderSlots(); renderLog();
+  return ok;
+}
+async function loadFrom(slot){
+  const txt=await storeGet(SAVE_KEY(slot));
+  if(!txt) return false;
+  try{ deserialise(txt); closeMenu(); return true; }
+  catch(e){ return false; }
+}
+async function renderSlots(){
+  const box=document.getElementById("slots");
+  if(!box) return;
+  const rows=await Promise.all(SLOTS.map(async n=>{
+    let meta=null;
+    try{ const t=await storeGet(SAVE_KEY(n)); if(t) meta=JSON.parse(t); }catch(e){}
+    const has=!!meta;
+    return `<div class="slot">
+      <div class="si">
+        <div class="sn">Slot ${n}</div>
+        <div class="sm">${has? `${meta.capital} · Year ${meta.year} · ${meta.cities} ${meta.cities===1?"city":"cities"}${
+              meta.version&&meta.version!==VERSION? ` · v${meta.version}`:""}`
+                            : "empty"}</div>
+      </div>
+      <button data-save="${n}">Save</button>
+      <button data-load="${n}" ${has?"":"disabled"}>Load</button>
+    </div>`;
+  }));
+  box.innerHTML=rows.join("");
+  box.querySelectorAll("[data-save]").forEach(b=>b.onclick=async()=>{
+    if(!G||!G.cities.length){ return; }
+    await saveTo(+b.getAttribute("data-save"));
+  });
+  box.querySelectorAll("[data-load]").forEach(b=>b.onclick=async()=>{
+    await loadFrom(+b.getAttribute("data-load"));
+  });
+}
+
+/* =================== menu =================== */
+function renderOpts(){
+  const box=document.getElementById("opts");
+  box.innerHTML=OPT_DEFS.map(o=>{
+    let ctl="";
+    if(o.type==="range")
+      ctl=`<input type="range" data-opt="${o.k}" min="${o.min}" max="${o.max}" step="${o.step}" value="${OPTS[o.k]}">
+           <span class="pc" id="ov_${o.k}">${OPTS[o.k]}</span>`;
+    else if(o.type==="toggle")
+      ctl=`<div class="sw2 ${OPTS[o.k]?"on":""}" data-opt="${o.k}" role="switch"
+             aria-checked="${!!OPTS[o.k]}" tabindex="0"><i></i></div>`;
+    else if(o.type==="select")
+      ctl=`<select data-opt="${o.k}">${o.opts.map(([v,l])=>
+             `<option value="${v}" ${String(OPTS[o.k])===String(v)?"selected":""}>${l}</option>`).join("")}</select>`;
+    return `<div class="opt"><div class="ol"><div class="on2">${o.name}</div>
+      <div class="od">${o.d}</div></div><div class="oc">${ctl}</div></div>`;
+  }).join("");
+
+  box.querySelectorAll("input[data-opt]").forEach(el=>el.oninput=()=>{
+    OPTS[el.getAttribute("data-opt")]=+el.value;
+    const v=document.getElementById("ov_"+el.getAttribute("data-opt"));
+    if(v) v.textContent=el.value;
+    draw();
+  });
+  box.querySelectorAll("select[data-opt]").forEach(el=>el.onchange=()=>{
+    const k=el.getAttribute("data-opt");
+    OPTS[k]= isNaN(+el.value)? el.value : +el.value;
+    draw();
+  });
+  box.querySelectorAll(".sw2[data-opt]").forEach(el=>{
+    const flip=()=>{
+      const k=el.getAttribute("data-opt");
+      OPTS[k]=!OPTS[k];
+      el.className="sw2"+(OPTS[k]?" on":"");
+      el.setAttribute("aria-checked",!!OPTS[k]);
+      draw();
+    };
+    el.onclick=flip;
+    el.onkeydown=e=>{ if(e.key===" "||e.key==="Enter"){ e.preventDefault(); flip(); } };
+  });
+}
+function openMenu(){
+  document.getElementById("menu").classList.add("on");
+  const playing=G&&G.cities.length;
+  document.getElementById("menuState").textContent =
+    playing? `${G.cities[0].name} · Year ${G.year} · ${G.cities.length} ${G.cities.length===1?"city":"cities"}`
+           : "No game in progress";
+  document.getElementById("mResume").disabled=!playing;
+  if(G) G.running=false, setPlayLabel();
+  renderOpts(); renderSlots();
+}
+function closeMenu(){ document.getElementById("menu").classList.remove("on"); }
+
+
+/* =================== loop =================== */
+let acc=0;
+function frame(ts){
+  if(G&&G.running){
+    acc++;
+    if(acc >= Math.max(1, 9-OPTS.speed)){ acc=0; tick(); render(); renderLog(); }
+  }
+  draw();
+  requestAnimationFrame(frame);
+}
+function setPlayLabel(){
+  const b=document.getElementById("play");
+  if(b) b.textContent = (G&&G.running) ? "Pause" : "Run";
+}
+document.getElementById("openMenu").onclick=openMenu;
+document.getElementById("mResume").onclick=closeMenu;
+document.getElementById("mNew").onclick=()=>{
+  closeMenu();
+  G=newGame("tyre"); G.cities=[]; G.sel=null; G.world=newWorld();
+  document.getElementById("intro").style.display="";
+  document.getElementById("log").innerHTML="<p>Choose where your house begins.</p>";
+  chooseStart(); resize(); fitCam(); draw();
+};
+document.getElementById("mExport").onclick=()=>{
+  const t=serialise();
+  const box=document.getElementById("saveText");
+  if(!t){ box.value="Nothing to save yet."; return; }
+  box.value=t; box.select();
+  try{ document.execCommand("copy"); }catch(e){}
+};
+document.getElementById("mImport").onclick=()=>{
+  const box=document.getElementById("saveText");
+  try{ deserialise(box.value.trim()); closeMenu(); }
+  catch(e){ box.value="That doesn't look like a save."; }
+};
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"){
+    const m=document.getElementById("menu");
+    m.classList.contains("on")? closeMenu() : openMenu();
+  }
+});
+
+document.getElementById("play").onclick=()=>{
+  G.running=!G.running;
+  document.getElementById("play").textContent=G.running?"Pause":"Run";
+};
+document.getElementById("step").onclick=()=>{
+  for(let i=0;i<WPY;i++) tick();
+  render(); renderLog();
+};
+function setTab(t){
+  G.tab=t;
+  document.getElementById("tabBuild").className = t==="build"?"on":"";
+  document.getElementById("tabTrade").className = t==="trade"?"on":"";
+  document.getElementById("tabLearn").className = t==="learn"?"on":"";
+  document.getElementById("tabAnnals").className = t==="annals"?"on":"";
+  document.getElementById("tabMarket").className = t==="market"?"on":"";
+  renderPanel();
+}
+document.getElementById("tabBuild").onclick=()=>setTab("build");
+document.getElementById("tabTrade").onclick=()=>setTab("trade");
+document.getElementById("tabLearn").onclick=()=>setTab("learn");
+document.getElementById("tabAnnals").onclick=()=>setTab("annals");
+document.getElementById("tabMarket").onclick=()=>setTab("market");
+
+/* =================== start =================== */
+const START_BLURB={
+  tyre:{tag:"Rich, dependent",
+    p:"Murex dye and oil make silver faster than anywhere else. You will have money long before you have materials — almost every raw good must be shipped in."},
+  ugarit:{tag:"Fed and forested",
+    p:"Deep soil and timber enough to build and to build ships. No metal whatsoever, so your forges live entirely at the end of a supply line."},
+  enkomi:{tag:"Metal, and little else",
+    p:"Copper in quantity, and the smelters to work it. But no forest and thin ground: timber and grain must both come by sea before anything is raised."},
+  knossos:{tag:"Balanced, central",
+    p:"Grain, some timber, a little iron, and a position in the middle of everything. The easiest start, and the best placed to push west early."},
+};
+function chooseStart(){
+  const opts=SITES.filter(s=>s.start);
+  document.getElementById("starts").innerHTML = opts.map(s=>{
+    const b=START_BLURB[s.id]||{tag:"",p:""};
+    return `<button class="start" data-start="${s.id}">
+      <h3>${s.name}</h3>
+      <div class="tag">${b.tag}</div>
+      <p>${b.p}</p>
+      <div class="dep">${Object.entries(s.dep).map(([k,v])=>`${k} ${v}`).join(" · ")}</div>
+      <div class="dep" style="border:none;padding-top:2px;color:var(--dim)">Begins with ${
+        (s.begin||[]).map(b=>BLD[b].name.toLowerCase())
+          .reduce((a,n)=>{a[n]=(a[n]||0)+1;return a;},{}) &&
+        Object.entries((s.begin||[]).reduce((a,b)=>{const n=BLD[b].name.toLowerCase();a[n]=(a[n]||0)+1;return a;},{}))
+          .map(([n,k])=>k>1?`${k} ${n}s`:n).join(", ")}</div>
+    </button>`;
+  }).join("");
+  document.querySelectorAll("[data-start]").forEach(el=>{
+    el.onclick=()=>{
+      G=newGame(el.getAttribute("data-start"));
+      document.getElementById("intro").style.display="none";
+      log(`Your house takes root at <b>${cityById(G.sel).name}</b>.`);
+      resize(); fitCam(); render(); renderLog();
+    };
+  });
+}
+
+G=newGame("tyre");            // provisional, only so the chart can draw
+G.cities=[]; G.sel=null;      // no city until a start is chosen
+G.world=newWorld();           // restore every port to the map
+document.body.setAttribute("data-m","build");
+resize(); fitCam(); draw(); chooseStart(); requestAnimationFrame(frame);
+</script>
+</body>
+</html>
