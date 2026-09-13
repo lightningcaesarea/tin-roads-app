@@ -253,6 +253,66 @@ label.f{display:block;font-size:11.5px;color:var(--dim);margin:6px 0 2px}
 @media(max-width:860px){ .introwrap{padding:34px 16px 50px} }
 
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+/* =================== the manual =================== */
+#manual{position:fixed;inset:0;z-index:70;display:none;overflow-y:auto;
+  background:rgba(5,14,21,.94);backdrop-filter:blur(3px)}
+#manual.on{display:block}
+.manwrap{max-width:1060px;margin:min(6vh,52px) auto;padding:0 18px 70px;
+  display:grid;grid-template-columns:206px 1fr;gap:28px;align-items:start}
+.manhead{grid-column:1/-1;display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:4px}
+.manhead h1{margin:0}
+.mannav{position:sticky;top:min(6vh,52px)}
+.mannav button{display:block;width:100%;text-align:left;margin-bottom:2px;font-size:12.5px;
+  padding:6px 9px;background:none;border:1px solid transparent;color:var(--tin)}
+.mannav button:hover{background:var(--soft)}
+.mannav button.on{background:var(--murex);border-color:var(--murex-lit);color:#fff}
+.manbody{min-width:0}
+.manbody h2{margin:0 0 4px;font-size:21px;color:var(--paper)}
+.manbody .stand{color:var(--ochre);font-size:12.5px;margin:0 0 14px}
+.manbody h3{margin:20px 0 5px;font-size:14.5px;color:var(--verdigris);
+  font-family:ui-sans-serif,system-ui,sans-serif;letter-spacing:.02em}
+.manbody p{margin:0 0 10px;max-width:68ch;font-size:14px}
+.manbody ul{margin:0 0 10px;padding-left:19px;max-width:68ch;font-size:14px}
+.manbody li{margin-bottom:4px}
+.manbody b{color:var(--paper)}
+.manbody em{color:var(--tin);font-style:italic}
+.mantab{width:100%;border-collapse:collapse;margin:2px 0 12px;font-size:12.5px;max-width:68ch}
+.mantab th,.mantab td{text-align:left;padding:5px 9px 5px 0;border-bottom:1px solid var(--soft);
+  vertical-align:top}
+.mantab th{color:var(--tin);font-weight:600;font-family:ui-sans-serif,system-ui,sans-serif;font-size:11.5px;
+  text-transform:uppercase;letter-spacing:.05em}
+.manbox{border:1px solid var(--soft);border-left:2px solid var(--ochre);border-radius:0 3px 3px 0;
+  padding:9px 12px;margin:0 0 12px;background:rgba(201,162,39,.05);max-width:68ch}
+.manbox p{margin:0;font-size:13px}
+
+/* =================== the tutorial card =================== */
+#tut{position:fixed;z-index:40;left:302px;bottom:16px;width:332px;display:none;
+  background:linear-gradient(180deg,#143a50,#0d2534);
+  border:1px solid var(--murex-lit);border-radius:4px;padding:11px 13px;
+  box-shadow:0 12px 34px rgba(0,0,0,.5)}
+#tut.on{display:block}
+#tut .th{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:5px}
+#tut .tname{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--murex-lit);
+  font-family:ui-sans-serif,system-ui,sans-serif}
+#tut .tcount{font-size:11px;color:var(--dim);font-family:ui-sans-serif,system-ui,sans-serif}
+#tut h3{margin:0 0 4px;font-size:15.5px;color:var(--paper)}
+#tut p{margin:0 0 9px;font-size:13px;color:var(--tin);line-height:1.42}
+#tut .trow{display:flex;gap:6px}
+#tut .trow button{flex:1;font-size:11.5px;padding:5px 6px}
+#tut .tbar{height:3px;background:rgba(159,178,188,.16);border-radius:2px;margin:-2px 0 8px;overflow:hidden}
+#tut .tbar i{display:block;height:100%;background:var(--murex-lit);transition:width .3s}
+#tutTab{position:fixed;z-index:40;left:302px;bottom:16px;display:none;
+  font-size:11.5px;padding:6px 11px;background:var(--murex);border-color:var(--murex-lit);color:#fff}
+#tutTab.on{display:block}
+@media(max-width:860px){
+  .manwrap{grid-template-columns:1fr;gap:14px;margin-top:0;padding-top:14px}
+  .mannav{position:static;display:flex;gap:5px;overflow-x:auto;padding-bottom:6px;
+    -webkit-overflow-scrolling:touch}
+  .mannav button{width:auto;flex:0 0 auto;white-space:nowrap;border-color:var(--soft)}
+  #tut{left:8px;right:8px;width:auto;bottom:8px}
+  #tutTab{left:8px;bottom:8px}
+}
 </style>
 </head>
 <body>
@@ -279,6 +339,10 @@ label.f{display:block;font-size:11.5px;color:var(--dim);margin:6px 0 2px}
       <button class="p" id="mResume">Resume</button>
       <button id="mNew">New game</button>
     </div>
+    <div class="mrow">
+      <button id="mManual">The manual</button>
+      <button id="mTutorial">Restart the tutorial</button>
+    </div>
 
     <h2>Saved games</h2>
     <div id="slots"></div>
@@ -297,6 +361,33 @@ label.f{display:block;font-size:11.5px;color:var(--dim);margin:6px 0 2px}
   </div>
 </div>
 
+<div id="manual">
+  <div class="manwrap">
+    <div class="manhead">
+      <h1>The manual</h1>
+      <button id="manClose">Close</button>
+    </div>
+    <nav class="mannav" id="manNav"></nav>
+    <div class="manbody" id="manBody"></div>
+  </div>
+</div>
+
+<div id="tut">
+  <div class="th">
+    <span class="tname">Learning the trade</span>
+    <span class="tcount" id="tutCount"></span>
+  </div>
+  <div class="tbar"><i id="tutBar"></i></div>
+  <h3 id="tutTitle"></h3>
+  <p id="tutBody"></p>
+  <div class="trow">
+    <button id="tutManual">Manual</button>
+    <button id="tutHide">Hide</button>
+    <button id="tutSkip">Skip step</button>
+  </div>
+</div>
+<button id="tutTab">Tutorial</button>
+
 <div class="shell">
 
   <aside class="rail l">
@@ -309,6 +400,7 @@ label.f{display:block;font-size:11.5px;color:var(--dim);margin:6px 0 2px}
     <div class="row">
       <button class="p" id="play">Run</button>
       <button id="step">+1 yr</button>
+      <button id="openManual" title="The manual" style="flex:0 0 40px">?</button>
       <button id="openMenu" title="Menu" style="flex:0 0 46px">☰</button>
     </div>
 
@@ -368,8 +460,8 @@ label.f{display:block;font-size:11.5px;color:var(--dim);margin:6px 0 2px}
    ===================================================================== */
 
 /* major.minor.patch — minor for new systems, patch for fixes and balance */
-const VERSION="0.14.1";
-const BUILD="2026-09-11";
+const VERSION="0.15.0";
+const BUILD="2026-09-13";
 
 const GOODS = ["grain","timber","charcoal","copperore","ironore","clay","wool","olives",
                "copper","tin","iron","bronze","pottery","cloth","purple","oil","silver"];
@@ -829,6 +921,7 @@ function newGame(startId){
     visitors:[], nextVisitor:1,
     rivals:RIVAL_DEFS.map(r=>({...r, cities:[], silver:260})),
     sel:startId, tab:"build",
+    tut:{on:true, step:0, base:null, done:false, hidden:false},
     world:newWorld(startId),
   };
   delete g.world[startId];
@@ -2272,8 +2365,11 @@ function expeditionTick(){
 
 /* =================== panels =================== */
 function render(){
-  if(G.over){ renderEnd(); draw(); return; }
+  if(G.over){ document.getElementById("tut").classList.remove("on");
+              document.getElementById("tutTab").classList.remove("on");
+              renderEnd(); draw(); return; }
   renderLeft(); renderPanel(); draw();
+  if(typeof tutCheck==="function") tutCheck();
 }
 
 function renderEnd(){
@@ -3192,7 +3288,8 @@ function serialise(){
     g:{t:G.t,year:G.year,silver:G.silver,cities:G.cities,ships:G.ships,routes:G.routes,
        expeditions:G.expeditions,events:G.events,research:G.research,world:G.world,
        tinFlow:G.tinFlow,nextRoute:G.nextRoute,sel:G.sel,tab:G.tab,log:G.log,
-       custom:G.custom,nextContract:G.nextContract,visitors:G.visitors,nextVisitor:G.nextVisitor}
+       custom:G.custom,nextContract:G.nextContract,visitors:G.visitors,nextVisitor:G.nextVisitor,
+       tut:G.tut}
   });
 }
 function deserialise(txt){
@@ -3202,6 +3299,9 @@ function deserialise(txt){
     log(`Loaded a save written by version ${d.version}; this build is ${VERSION}.`);
   G=Object.assign(newGame("tyre"), d.g);
   G.running=false;
+  // A save written before the tutorial existed belongs to someone who does not
+  // need it; only a save that was actually mid-tutorial resumes one.
+  if(!d.g.tut) G.tut={on:false,step:0,base:null,done:true,hidden:false};
   if(d.opts) Object.assign(OPTS,d.opts);
   SHIP_SEQ=d.shipSeq||Math.max(0,...G.ships.map(s=>s.id||0));
   if(!G.cities.some(c=>c.id===G.sel)) G.sel=G.cities[0]?G.cities[0].id:null;
@@ -3344,6 +3444,7 @@ document.getElementById("mImport").onclick=()=>{
 };
 document.addEventListener("keydown",e=>{
   if(e.key==="Escape"){
+    if(manualOpen()){ closeManual(); return; }   // the manual sits above the menu
     const m=document.getElementById("menu");
     m.classList.contains("on")? closeMenu() : openMenu();
   }
@@ -3371,6 +3472,402 @@ document.getElementById("tabTrade").onclick=()=>setTab("trade");
 document.getElementById("tabLearn").onclick=()=>setTab("learn");
 document.getElementById("tabAnnals").onclick=()=>setTab("annals");
 document.getElementById("tabMarket").onclick=()=>setTab("market");
+
+/* =================== the manual =================== */
+/* Reference, not narrative. Each section should answer a question the player
+   is actually holding while they read it. */
+const MANUAL=[
+{id:"first",name:"What you are doing",stand:"There is no victory. You stop when you have built enough.",html:`
+<p>You run a trading house on the Iron Age Mediterranean. You hold cities, build
+out their industry, move goods between them by sea and road, and settle new
+coasts when you can afford to.</p>
+<p>Nothing in the game tells you that you have won, because nothing ends. The
+clock runs from Year 0 for as long as your house lasts. You can, however,
+<b>lose</b>: a city whose people all leave is abandoned, and a house with no
+cities left is finished.</p>
+<h3>The shape of a game</h3>
+<p>Early on you are solving food and fuel. In the middle you are solving
+<em>tin</em>, which comes from far outside the map and can be cut off. Late,
+you are either holding a bronze supply line across the whole sea, or you have
+learned enough iron to stop needing one.</p>
+<div class="manbox"><p>Each of the four starts sets a different problem. Tyre
+makes silver but no materials; Ugarit has soil and timber but no metal at all;
+Enkomi has copper and little else; Knossos is balanced and central.</p></div>
+`},
+
+{id:"year",name:"The year and the sea",stand:"Fifty-two weeks to the year, and a summer that closes the west.",html:`
+<p>Time moves in weekly ticks, fifty-two to the year. <b>Run</b> starts and
+stops the clock; <b>+1 yr</b> advances a full year at once. Game speed is in
+the menu under Options.</p>
+<h3>The Etesian season</h3>
+<p>From roughly mid-May to mid-September the eastern Mediterranean blows hard
+from the north-west. Short crossings inside the east — Cyprus to the Levant —
+stay cheap. Long <b>westbound</b> passages out of the east become slow or
+effectively closed.</p>
+<p>The consequence is that goods pool in the east each summer: they can arrive
+but not easily leave. A shock during that window hurts more than the same shock
+in winter. The wind indicator under the clock tells you where you stand.</p>
+<p><em>Star navigation</em>, in the Seafaring branch, takes much of the bite out
+of the season.</p>
+<h3>The chart</h3>
+<p>Drag to pan, scroll or pinch to zoom, and use the buttons at the corner of
+the map to zoom or fit the whole sea. Tap a site for its details. Any coast can
+be surveyed, not just the named sites — what is under it is derived from real
+geography and never changes between games.</p>
+`},
+
+{id:"city",name:"Cities",stand:"Plots, hands and mouths. All three run out.",html:`
+<p>A city grows through five stages — <b>Camp, Village, Town, City, Great
+city</b> — and each stage grants more <b>plots</b> to build on. Most buildings
+occupy one plot.</p>
+<h3>The three limits</h3>
+<table class="mantab">
+<tr><th>Limit</th><th>What raises it</th></tr>
+<tr><td><b>Plots</b> — room to build</td><td>Reaching the next stage. Cleared
+ground adds four and occupies none itself. Drained marsh adds one and fertile
+ground with it; a deep gallery opens another mine.</td></tr>
+<tr><td><b>Hands</b> — workers</td><td>Population. Every works needs people;
+a building with nobody to run it does nothing.</td></tr>
+<tr><td><b>Housing</b> — the ceiling on people</td><td>Dwellings and cisterns.
+Population grows toward that ceiling and stops.</td></tr>
+</table>
+<h3>Store and spoilage</h3>
+<p>A city holds 140 of everything by default. A <b>granary</b> adds 120 and
+slows what rots; a <b>warehouse</b> adds 200. Overflow is simply lost, which
+matters most in the closed season when ships are not moving stock out.</p>
+<h3>Reserves and throttles</h3>
+<p>A <b>reserve</b> is stock a works may not draw below — set one on timber and
+your charcoal kilns will stop before they eat the wood you were saving for
+hulls. A <b>throttle</b> caps how hard a works runs, for when a chain is
+outrunning its inputs.</p>
+<h3>Woodland</h3>
+<p>Forest depletes as you cut it. A <b>tree nursery</b> replants, slowly. Fuel
+and shipbuilding draw on the same forest, so a city that smelts hard and builds
+hulls will strip itself unless you plan for it.</p>
+`},
+
+{id:"chains",name:"The chains",stand:"Ore and charcoal become metal. Metal becomes tools.",html:`
+<p>Seventeen goods across five tiers. Raw goods come out of the ground, fuel is
+made from timber, and everything after that is a works turning one thing into
+another. Chains resolve within a single week.</p>
+<h3>The fuel problem</h3>
+<p>A <b>charcoal kiln</b> turns 2.6 timber into 2.0 charcoal. Almost everything
+downstream burns it: smelters, bloomeries, potters, silver works, both forges.
+Charcoal is the quiet bottleneck in most cities, and it is made of the same
+forest your shipyard wants.</p>
+<h3>Copper and bronze</h3>
+<table class="mantab">
+<tr><th>Works</th><th>Takes</th><th>Gives</th></tr>
+<tr><td>Copper mine</td><td>—</td><td>3.2 copper ore</td></tr>
+<tr><td>Copper smelter</td><td>2.4 ore · 1.1 charcoal</td><td>1.7 copper</td></tr>
+<tr><td>Bronze forge</td><td>1.7 copper · <b>0.19 tin</b> · 0.6 charcoal</td><td>1.5 bronze</td></tr>
+</table>
+<p>Nine parts copper to one of tin. That last ingredient is the whole game.</p>
+<h3>Why tin is the problem</h3>
+<p>Copper is scattered all over the sea and Cyprus is full of it. Tin is not:
+it comes from two roads that end far beyond the map, and a <b>tin road post</b>
+can only be built where one of them lands. It produces 0.75 a week — the rarest
+thing you can hold.</p>
+<p>Fortune can cut the road outright. When it does, every bronze forge you own
+stops dead the week your stock runs out.</p>
+<div class="manbox"><p>There are two answers. Hold both tin roads and a supply
+line that can reach them — or learn iron and stop needing tin at all. Most
+houses try the first and are eventually forced into the second.</p></div>
+<h3>Iron</h3>
+<p>Iron ore is common where copper is not, which is exactly the point of it. It
+needs the <em>Bloomery furnace</em> tech before you can work it. An iron forge
+is poorer than a bronze one until you learn to steel it — <em>Carburising</em>,
+then <em>Cementation steel</em> in the later age, which finally passes bronze.</p>
+`},
+
+{id:"trade",name:"Shipping",stand:"A ship carries a manifest, not a good.",html:`
+<p>A <b>route</b> is a standing instruction between two places: what to carry,
+what to bring back, and how much to spend doing it. Ships assigned to it run it
+until you change it.</p>
+<p>Any port you trade with needs a <b>harbour</b> before a ship will call there.</p>
+<h3>Purposes</h3>
+<table class="mantab">
+<tr><th>Purpose</th><th>What happens</th></tr>
+<tr><td>Sell there</td><td>Carry goods out, sell, come home empty.</td></tr>
+<tr><td>Buy there</td><td>Sail out empty, buy, bring it home.</td></tr>
+<tr><td>Sell then buy</td><td>Both, in one voyage — sell at the far port, then
+spend the room that selling made on the return cargo.</td></tr>
+</table>
+<h3>The manifest</h3>
+<p>A manifest has two halves, and a good can appear on either or both.</p>
+<ul>
+<li><b>Outbound goods take a floor.</b> "Sell grain, keep 60" means sell
+whatever is above sixty and never touch the sixty.</li>
+<li><b>Return goods take a ceiling.</b> "Buy tin, up to 40" means buy until the
+city holds forty, then stop.</li>
+</ul>
+<p>Floors are how you stop a route quietly starving the city that feeds it. A
+route with nothing above its floors sails out empty rather than waiting.</p>
+<h3>Spending caps</h3>
+<p>A route can carry a silver budget, so a buying leg cannot empty your
+treasury when prices move against you.</p>
+<h3>Caravans</h3>
+<p>Two places on the same landmass can be linked overland instead. The origin
+needs a <b>caravanserai</b>. Caravans are slow, but no wind and no raider
+touches them — which makes them the thing that still works during the closed
+season and during a raid.</p>
+<h3>Raiders</h3>
+<p>Unescorted ships can lose their cargo, or be lost outright. A <b>war
+galley</b> assigned to a route escorts it. <em>Convoy discipline</em>, later,
+cuts losses further. Walls protect the city itself rather than the ships.</p>
+`},
+
+{id:"silver",name:"Silver",stand:"Four ways to be paid, and only one of them is mining it.",html:`
+<p>You begin with 420. It pays for every building, every hull and every cargo
+you buy, and there is no borrowing.</p>
+<h3>Where it comes from</h3>
+<ul>
+<li><b>Selling</b> into ports that want what you have. A port sells cheap what
+its own ground gives and pays dear for what it lacks, so the money is in
+carrying things to where they are scarce.</li>
+<li><b>Silver works</b>, if you hold ground that has the ore. Reliable, and it
+pays for everything else.</li>
+<li><b>Standing contracts</b> from foreign ports — a fixed quantity at a fixed
+price, with a bonus for completing and a forfeit for letting it lapse. Leave
+one sitting too long and a rival will take it.</li>
+<li><b>Visiting traders</b>, who arrive at your harbours unbidden.</li>
+</ul>
+<h3>Reading a trader's offer</h3>
+<p>Every offer is rated against what the good is generally worth:
+<em>generous</em>, <em>fair</em>, <em>even</em> or <em>poor</em>. Roughly a
+third are worth taking and a quarter are worth refusing outright — judging the
+terms is the point, not clicking yes.</p>
+<p>Sellers tend to offer what your city is short of, which now and then means
+<b>tin</b> arriving at your own quay without your having sailed for it.</p>
+<p>A harbour draws a caller every seven months or so; a <b>merchant quarter</b>
+cuts that to about three, and improves the terms you get when selling. Dealing
+with traders raises a city's standing, which brings more of them — and fades
+if you stop.</p>
+`},
+
+{id:"learn",name:"Learning",stand:"Thirty-three techs, five branches, two ages.",html:`
+<p>Learning accrues on its own and faster with a <b>scribal archive</b>. You
+choose what it goes toward. <em>Alphabetic script</em> speeds up everything
+that follows it.</p>
+<h3>The branches</h3>
+<table class="mantab">
+<tr><th>Branch</th><th>For</th></tr>
+<tr><td>Husbandry</td><td>Yield, and blunting a drought.</td></tr>
+<tr><td>Metallurgy</td><td>Recovery from ore, iron, and using less tin.</td></tr>
+<tr><td>Seafaring</td><td>Speed, the wind, hull classes, wear.</td></tr>
+<tr><td>Administration</td><td>Prices, colonies, roads, credit.</td></tr>
+<tr><td>Endurance</td><td>Surviving what you cannot prevent.</td></tr>
+</table>
+<h3>The later age</h3>
+<p>Sixteen techs are held back until you know <b>eight</b> of the first age.
+They are the crafts of a world learning to do without the long bronze supply
+lines: iron that finally beats bronze, sealed kilns that get far more charcoal
+from the same timber, salvage that lets a forge run on much less tin, letters
+of credit, made roads.</p>
+<p><b>Endurance</b> opens only in that later age, and only through iron. Hill
+forts cut what a raid takes; household craft makes shortage bite slower; sealed
+granaries save the harvest; kept memory holds your learning through a ruined
+age.</p>
+`},
+
+{id:"world",name:"The wider world",stand:"Three rivals, fourteen fortunes, and no scripted history.",html:`
+<h3>Rival houses</h3>
+<p>Three of them. They plant colonies of their own — capped so that four coasts
+always stay contestable — and they <b>trade</b>: they work the ports nearest
+their holdings, and their buying and selling moves the prices you see there.
+They will take a standing contract you leave sitting.</p>
+<p>They can also fail. A rival short of silver for long enough abandons a
+colony, and eventually scatters altogether.</p>
+<p>You cannot fight them. Growth is by colony and trade only.</p>
+<h3>Fortune</h3>
+<p>Fourteen events, good and bad, replacing all scripted history. Nothing is on
+a timer; none of it is inevitable.</p>
+<table class="mantab">
+<tr><th>Against you</th><th>For you</th></tr>
+<tr><td>Drought, and long drought</td><td>Good rains</td></tr>
+<tr><td>Tin road cut, or troubled</td><td>Tin flowing freely</td></tr>
+<tr><td>Storm years, raiders at sea</td><td>Calm seasons</td></tr>
+<tr><td>Pestilence, blight, forest fires</td><td>Rich seam, foreign demand</td></tr>
+</table>
+<p>The <b>Fortune</b> option sets how often any of it arrives. Zero gives a
+still world.</p>
+`},
+
+{id:"ruin",name:"When it goes wrong",stand:"Shortage, unrest, and the end of a house.",html:`
+<p>A city that cannot meet what its people need accrues <b>unrest</b>, and
+begins to lose population. Meet the need and unrest falls away again.</p>
+<p>If a city empties, it is <b>abandoned</b> — permanently. If every city goes,
+your house is ended and the game stops.</p>
+<h3>Reading the warning</h3>
+<p>Falling population is the signal, and it arrives well before the loss. Watch
+grain first: it is the need that bites soonest and the one a drought takes away
+without notice.</p>
+<h3>What actually helps</h3>
+<ul>
+<li><b>Terraces</b> and <em>irrigation canals</em> soften a bad decade. They
+cannot stop one happening — mitigation cuts the shortfall, it does not cancel
+the weather.</li>
+<li><b>Granaries</b> hold the good years against the bad ones.</li>
+<li><b>Caravans</b> keep feeding a city when the sea is shut.</li>
+<li>The <b>Endurance</b> branch, if you are far enough along.</li>
+</ul>
+<div class="manbox"><p>The most common way a house dies is not a drought. It is
+a bronze economy with one tin road, meeting a tin road cut that lasts four
+years.</p></div>
+`},
+
+{id:"keys",name:"Controls and saving",stand:"Where everything is.",html:`
+<h3>Controls</h3>
+<table class="mantab">
+<tr><th>Do this</th><th>For</th></tr>
+<tr><td>Drag the chart</td><td>Pan</td></tr>
+<tr><td>Scroll, or pinch</td><td>Zoom</td></tr>
+<tr><td>+ − ⤢ at the map corner</td><td>Zoom in, out, fit the whole sea</td></tr>
+<tr><td>Tap a site</td><td>Its details, and the option to survey it</td></tr>
+<tr><td>Escape</td><td>Open or close the menu</td></tr>
+<tr><td>? in the rail</td><td>This manual</td></tr>
+</table>
+<h3>Saving</h3>
+<p>Three slots, held in the browser's storage. Autosave is off by default and
+can be set to every 10, 25 or 50 years in Options; it writes to the last slot
+you used.</p>
+<div class="manbox"><p>Browser storage is not guaranteed — clearing site data
+or deleting an installed app takes the slots with it. <b>Copy save out</b> in
+the menu gives you the whole game as text, which you can keep anywhere and
+paste back in on any device. It is the only backup that really survives.</p></div>
+`},
+];
+
+let manSection=MANUAL[0].id;
+function renderManual(){
+  document.getElementById("manNav").innerHTML =
+    MANUAL.map(s=>`<button data-man="${s.id}" class="${s.id===manSection?"on":""}">${s.name}</button>`).join("");
+  const s=MANUAL.find(x=>x.id===manSection)||MANUAL[0];
+  document.getElementById("manBody").innerHTML =
+    `<h2>${s.name}</h2><p class="stand">${s.stand}</p>${s.html}`;
+  document.querySelectorAll("[data-man]").forEach(b=>{
+    b.onclick=()=>{ manSection=b.getAttribute("data-man"); renderManual();
+                    document.getElementById("manual").scrollTop=0; };
+  });
+  // On a phone the nav is a horizontal scroller, so the section you are in can
+  // sit off-screen. Drive its scroll directly rather than via scrollIntoView,
+  // which moves the page instead. On desktop the nav does not scroll and this
+  // does nothing.
+  const cur=document.querySelector("[data-man].on"), nav=document.getElementById("manNav");
+  if(cur&&nav) nav.scrollLeft=Math.max(0,cur.offsetLeft-nav.offsetLeft-12);
+}
+function openManual(id){
+  if(id) manSection=id;
+  renderManual();
+  document.getElementById("manual").classList.add("on");
+  document.getElementById("manual").scrollTop=0;
+}
+function closeManual(){ document.getElementById("manual").classList.remove("on"); }
+const manualOpen = () => document.getElementById("manual").classList.contains("on");
+
+/* =================== the tutorial =================== */
+/* Every step watches the game state rather than the click that caused it, so
+   it cannot fall out of step with what the player actually did — and a step
+   already satisfied by the chosen start is skipped rather than asked for. */
+const TUT_STEPS=[
+{id:"clock",title:"Let the weeks run",
+ body:"Press Run. Time moves a week at a time, fifty-two to the year. Press it again whenever you want to stop and think — nothing happens while you are paused.",
+ done:g=>g.t>=3},
+
+{id:"build",title:"Raise something",
+ body:"Open Build. Your city has plots to build on, hands to work them, and a purse. Raise anything you can afford — a farmstead is never wasted.",
+ base:g=>sel()?sel().buildings.length:0,
+ done:(g,b)=>sel()&&sel().buildings.length>b},
+
+{id:"kiln",title:"Make charcoal",
+ body:"Build a charcoal kiln. It turns timber into fuel, and almost everything downstream burns it — smelters, potters, both forges. It is the bottleneck in most cities, so build it before you need it.",
+ skip:g=>sel()&&hasBld(sel(),"kiln"),
+ done:g=>sel()&&hasBld(sel(),"kiln")},
+
+{id:"harbour",title:"Open the city to the sea",
+ body:"You need a harbour before any ship will call here. Build one.",
+ skip:g=>sel()&&hasBld(sel(),"harbour"),
+ done:g=>sel()&&hasBld(sel(),"harbour")},
+
+{id:"route",title:"Open a route",
+ body:"Go to Shipping and open a route to another port. Tick at least one good for the manifest — a ship carries a list, not a single cargo. Give outbound goods a floor so the route cannot strip the city that feeds it.",
+ done:g=>g.routes.length>0},
+
+{id:"sail",title:"Let her sail",
+ body:"Run the clock and watch the route. Ships load, cross, trade and come back; the card shows where each one is. Passages take longer in the summer, when the wind blows against anything heading west.",
+ done:g=>g.routes.some(r=>r.phase&&r.phase!=="load")},
+
+{id:"learn",title:"Begin learning",
+ body:"Open Learning and choose something to work toward. Learning accrues on its own, faster with a scribal archive. Everything you will need later — iron, better hulls, surviving a bad decade — starts here.",
+ done:g=>!!(g.research&&(g.research.current||g.research.done.length))},
+
+{id:"grow",title:"Make room for people",
+ body:"Population grows toward whatever housing you have and then stops, and every works needs hands. Build dwellings or a cistern to raise the ceiling.",
+ base:g=>sel()?sel().buildings.filter(b=>b==="dwellings"||b==="cistern").length:0,
+ done:(g,b)=>sel()&&sel().buildings.filter(b=>b==="dwellings"||b==="cistern").length>b},
+];
+
+function sel(){ return G&&G.sel? cityById(G.sel) : (G&&G.cities? G.cities[0] : null); }
+
+function tutAdvance(){ G.tut.step++; G.tut.base=null; }
+
+function tutCheck(){
+  if(!G||!G.tut||!G.tut.on||G.tut.done) { renderTut(); return; }
+  if(!G.cities||!G.cities.length) return;          // no game running yet
+  let guard=0;
+  while(guard++ < TUT_STEPS.length+2){
+    const s=TUT_STEPS[G.tut.step];
+    if(!s){ G.tut.done=true; G.tut.hidden=false;
+            log("You have the run of it now. The manual holds the rest."); break; }
+    if(G.tut.base===null||G.tut.base===undefined) G.tut.base = s.base? s.base(G) : 0;
+    if((s.skip&&s.skip(G)) || s.done(G,G.tut.base)){ tutAdvance(); continue; }
+    break;
+  }
+  renderTut();
+}
+
+function renderTut(){
+  const card=document.getElementById("tut"), tab=document.getElementById("tutTab");
+  const live = G&&G.tut&&G.tut.on&&G.cities&&G.cities.length;
+  if(!live){ card.classList.remove("on"); tab.classList.remove("on"); return; }
+  if(G.tut.hidden){ card.classList.remove("on"); tab.classList.add("on"); return; }
+  tab.classList.remove("on"); card.classList.add("on");
+
+  const n=TUT_STEPS.length;
+  if(G.tut.done){
+    document.getElementById("tutCount").textContent="done";
+    document.getElementById("tutBar").style.width="100%";
+    document.getElementById("tutTitle").textContent="That is the whole of it";
+    document.getElementById("tutBody").textContent=
+      "Everything else is judgement. The manual has the detail when you want it — tin, the closed season, contracts, and what to do when a city starts emptying.";
+    document.getElementById("tutSkip").textContent="Close";
+    return;
+  }
+  const s=TUT_STEPS[G.tut.step];
+  document.getElementById("tutCount").textContent=(G.tut.step+1)+" of "+n;
+  document.getElementById("tutBar").style.width=Math.round(G.tut.step/n*100)+"%";
+  document.getElementById("tutTitle").textContent=s.title;
+  document.getElementById("tutBody").textContent=s.body;
+  document.getElementById("tutSkip").textContent="Skip step";
+}
+
+function tutRestart(){
+  if(!G) return;
+  G.tut={on:true,step:0,base:null,done:false,hidden:false};
+  tutCheck();
+}
+
+document.getElementById("tutHide").onclick=()=>{ G.tut.hidden=true; renderTut(); };
+document.getElementById("tutTab").onclick=()=>{ G.tut.hidden=false; renderTut(); };
+document.getElementById("tutManual").onclick=()=>openManual("first");
+document.getElementById("tutSkip").onclick=()=>{
+  if(G.tut.done){ G.tut.on=false; renderTut(); return; }
+  tutAdvance(); tutCheck();
+};
+document.getElementById("openManual").onclick=()=>openManual();
+document.getElementById("manClose").onclick=closeManual;
+document.getElementById("mManual").onclick=()=>{ closeMenu(); openManual(); };
+document.getElementById("mTutorial").onclick=()=>{ closeMenu(); tutRestart(); };
 
 /* =================== start =================== */
 const START_BLURB={

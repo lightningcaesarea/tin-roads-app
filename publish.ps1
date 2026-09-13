@@ -158,12 +158,27 @@ Write-Host "Wrote  : index.html ($([math]::Round((Get-Item $indexPath).Length / 
 
 if ($Push) {
     Push-Location $PSScriptRoot
+    # git writes ordinary notices (line-ending warnings, push progress) to
+    # stderr, which PowerShell turns into error records. Under -ErrorAction Stop
+    # that aborts a perfectly good publish, so judge these by exit code instead.
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
     try {
-        git add -A
-        git commit -m "Publish v$version"
-        git push
-        Write-Host "Pushed. Pages will redeploy in a minute or so."
-    } finally { Pop-Location }
+        git add -A 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "git add failed ($LASTEXITCODE)" }
+
+        git commit -m "Publish v$version" 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Nothing to commit — this build is already published."
+        } else {
+            git push 2>&1 | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "git push failed ($LASTEXITCODE)" }
+            Write-Host "Pushed v$version. Pages will redeploy in a minute or so."
+        }
+    } finally {
+        $ErrorActionPreference = $prev
+        Pop-Location
+    }
 } else {
     Write-Host "Not pushed. Re-run with -Push, or commit yourself."
 }
