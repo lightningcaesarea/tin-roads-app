@@ -460,7 +460,7 @@ label.f{display:block;font-size:11.5px;color:var(--dim);margin:6px 0 2px}
    ===================================================================== */
 
 /* major.minor.patch — minor for new systems, patch for fixes and balance */
-const VERSION="0.15.0";
+const VERSION="0.15.1";
 const BUILD="2026-09-13";
 
 const GOODS = ["grain","timber","charcoal","copperore","ironore","clay","wool","olives",
@@ -1681,6 +1681,15 @@ const buyItems  = r => routeItems(r).filter(i=>i.role==="buy");
 const routeSells = r => r.mode==="sell" || r.mode==="both";
 const routeBuys  = r => r.mode==="buy"  || r.mode==="both";
 
+/* What the new-route form currently has ticked, held outside the DOM so a
+   re-render does not discard it. */
+const maniOn  = (role,g)      => !!((G.rMani||{})[role+":"+g]||{}).on;
+const maniLim = (role,g,dflt) => {
+  const e=(G.rMani||{})[role+":"+g];
+  return e && e.lim!==undefined && e.lim!==null ? e.lim : dflt;
+};
+function maniClear(){ if(G) G.rMani={}; }
+
 function manifestSummary(r){
   const out=[];
   if(routeSells(r)){
@@ -2614,6 +2623,11 @@ function tradePanel(){
   const idle=G.ships.filter(s=>!G.routes.some(r=>r.ships.includes(s.id)));
   const from0 = cityById(G.rFrom) || harbours[0];
   G.rMode = G.rMode || "sell";
+  /* The form is rebuilt from scratch whenever the purpose, origin or carrier
+     changes, so what the player has already ticked has to live outside the
+     DOM or it is silently thrown away — which used to empty the outbound half
+     of a round trip the moment you chose "sell, then buy". */
+  G.rMani = G.rMani || {};
   let h=`<h2>Routes</h2>
     <div class="row"><button id="toggleNew">${G.uiNew?"Cancel new route":"Open a new route"}</button></div>`;
   if(G.uiNew) h+=`
@@ -2623,8 +2637,9 @@ function tradePanel(){
     <label class="f" for="rTo">To</label>
     <select id="rTo">${
       G.cities.filter(c=>hasBld(c,"harbour") && c.id!==from0.id)
-        .map(c=>`<option value="${c.id}">${c.name} (yours)</option>`).join("")+
-      Object.values(G.world).map(w=>`<option value="${w.id}">${w.name}</option>`).join("")
+        .map(c=>`<option value="${c.id}" ${c.id===G.rTo?"selected":""}>${c.name} (yours)</option>`).join("")+
+      Object.values(G.world).map(w=>
+        `<option value="${w.id}" ${w.id===G.rTo?"selected":""}>${w.name}</option>`).join("")
     }</select>
     <label class="f" for="rLand">Carried by</label>
     <select id="rLand">
@@ -2640,16 +2655,16 @@ function tradePanel(){
     ${(G.rMode!=="buy")?`
     <label class="f">Carry out and sell — keep at least this much at home</label>
     <div class="mani">${TRADEABLE.map(g=>`<div class="mi">
-        <label><input type="checkbox" data-mg="sell:${g}"><span>${GOOD_NAME[g]}</span></label>
+        <label><input type="checkbox" data-mg="sell:${g}" ${maniOn("sell",g)?"checked":""}><span>${GOOD_NAME[g]}</span></label>
         <span class="hold">${(from0?from0.stock[g]:0).toFixed(0)}</span>
-        <input type="number" min="0" step="10" data-ml="sell:${g}" value="0" placeholder="keep">
+        <input type="number" min="0" step="10" data-ml="sell:${g}" value="${maniLim("sell",g,0)}" placeholder="keep">
       </div>`).join("")}</div>`:""}
     ${(G.rMode!=="sell")?`
     <label class="f">Buy and bring home — up to this much on hand</label>
     <div class="mani">${TRADEABLE.map(g=>`<div class="mi">
-        <label><input type="checkbox" data-mg="buy:${g}"><span>${GOOD_NAME[g]}</span></label>
+        <label><input type="checkbox" data-mg="buy:${g}" ${maniOn("buy",g)?"checked":""}><span>${GOOD_NAME[g]}</span></label>
         <span class="hold">${(from0?from0.stock[g]:0).toFixed(0)}</span>
-        <input type="number" min="0" step="10" data-ml="buy:${g}" value="120" placeholder="to">
+        <input type="number" min="0" step="10" data-ml="buy:${g}" value="${maniLim("buy",g,120)}" placeholder="to">
       </div>`).join("")}</div>`:""}
     <label class="f" for="rBudget">Most to spend per trip (buying only — blank for no limit)</label>
     <input type="number" id="rBudget" min="0" step="10" placeholder="no limit">
@@ -3178,12 +3193,30 @@ function wirePanel(){
   const rl=document.getElementById("rLand");
   if(rl) rl.onchange=()=>{ G.rLand = rl.value==="land"; renderPanel(); };
   const tn=document.getElementById("toggleNew");
-  if(tn) tn.onclick=()=>{ G.uiNew=!G.uiNew; G.routeErr=null; renderPanel(); };
+  if(tn) tn.onclick=()=>{ G.uiNew=!G.uiNew; G.routeErr=null;
+                          if(!G.uiNew) maniClear(); renderPanel(); };
 
   const rModeSel=document.getElementById("rMode");
   if(rModeSel) rModeSel.onchange=()=>{ G.rMode=rModeSel.value; renderPanel(); };
   const rFromSel=document.getElementById("rFrom");
   if(rFromSel) rFromSel.onchange=()=>{ G.rFrom=rFromSel.value; renderPanel(); };
+  const rToSel=document.getElementById("rTo");
+  if(rToSel){ G.rTo=rToSel.value;                 // keep the default in step
+              rToSel.onchange=()=>{ G.rTo=rToSel.value; }; }
+
+  // remember the manifest across the re-renders the form does to itself
+  document.querySelectorAll("[data-mg]").forEach(box=>{
+    box.onchange=()=>{
+      const k=box.getAttribute("data-mg");
+      G.rMani[k]=Object.assign({},G.rMani[k],{on:box.checked});
+    };
+  });
+  document.querySelectorAll("[data-ml]").forEach(inp=>{
+    inp.onchange=()=>{
+      const k=inp.getAttribute("data-ml");
+      G.rMani[k]=Object.assign({},G.rMani[k],{lim:Math.max(0,+inp.value||0)});
+    };
+  });
 
   const add=document.getElementById("addRoute");
   if(add) add.onclick=()=>{
@@ -3217,7 +3250,7 @@ function wirePanel(){
     G.routes.push({id:G.nextRoute++,from,to,items,land:byLand,mode:isOwned(to)?"sell":mode,
                    budget:budget||null,ships:idle.map(s=>s.id),
                    phase:"load",status:"loading",cargo:{},legLeft:0,legTotal:0});
-    G.uiNew=false; G.routeErr=null;
+    G.uiNew=false; G.routeErr=null; maniClear(); G.rTo=null;
     render();
   };
 
@@ -3250,7 +3283,7 @@ const OPTS={
 };
 const OPT_DEFS=[
   {k:"speed",type:"range",min:1,max:8,step:1,name:"Game speed",
-   d:"How fast the weeks pass while running."},
+   d:"How fast the weeks pass while running. At 1 a year takes about a minute and three quarters; at 8, a couple of seconds."},
   {k:"eventRate",type:"range",min:0,max:2,step:.25,name:"Fortune",
    d:"How often droughts, tin cuts and good years arrive. Zero for a still world."},
   {k:"autosave",type:"select",opts:[[0,"Off"],[10,"Every 10 years"],[25,"Every 25 years"],[50,"Every 50 years"]],
@@ -3408,12 +3441,22 @@ function closeMenu(){ document.getElementById("menu").classList.remove("on"); }
 
 
 /* =================== loop =================== */
-let acc=0;
+/* Milliseconds per week at each speed setting. Paced against the clock rather
+   than counted in frames, which used to tie the game's speed to the display —
+   the same setting ran twice as fast on a 120Hz screen. At 1 a year takes
+   about a minute and three quarters; at 8, a couple of seconds. */
+const SPEED_MS=[0, 2000, 1200, 700, 400, 240, 140, 80, 45];
+const weekMs = () => SPEED_MS[Math.min(8,Math.max(1,Math.round(OPTS.speed)))] || 700;
+let lastBeat=0;
 function frame(ts){
   if(G&&G.running){
-    acc++;
-    if(acc >= Math.max(1, 9-OPTS.speed)){ acc=0; tick(); render(); renderLog(); }
-  }
+    if(!lastBeat) lastBeat=ts;
+    let n=0;
+    // Catch up only a little: a tab left in the background should not dump a
+    // decade into the world the moment it is looked at again.
+    while(ts-lastBeat >= weekMs() && n<4){ lastBeat+=weekMs(); tick(); n++; }
+    if(n){ render(); renderLog(); }
+  }else lastBeat=0;
   draw();
   requestAnimationFrame(frame);
 }
